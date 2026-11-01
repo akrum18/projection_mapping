@@ -15,8 +15,9 @@ export function defaultState() {
     showOutlines: false,
     testPattern: false,
     brightness: 1,
+    autoShow: 0, // minutes between automatic shows (0 = off)
     // Editor-only tracing photo of the real object (never shown on the projector).
-    reference: { url: "", opacity: 0.4, show: false },
+    reference: { url: "", opacity: 0.4, show: false, night: false },
     // Scenes share surfaces and alignment; each surface keeps its content/scare per scene in `looks`.
     scenes: [{ id: "main", name: "Main" }],
     scene: "main",

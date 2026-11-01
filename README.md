@@ -125,6 +125,50 @@ Notes:
 - Cameras are remembered by name, so the projector window finds the same one
   even though browsers give it a different id there.
 
+## A Christmas show for a real house
+
+These effects are built for the house itself rather than pictures on it. They
+put light only where something should be (everything else stays black, so no
+glowing rectangles), and size bulbs and lettering in projector pixels so they
+read from the street. Map each one onto the real feature:
+
+| Effect | Map it onto | Notes |
+| --- | --- | --- |
+| **Outline lights** | The outside of each window's white trim, the door frame, gutters, the porch railing | C9-style bulbs. "Line" puts a single row along a gutter or rail |
+| **Window candle** | The glass of each window | The colonial candle in every window, plus a warm room glow. Close blinds or curtains so the light has something to land on |
+| **Wrapped door** | The door | Projects only the ribbon. The door's colour is the paper, and the bow can frame your real wreath. On a red door every colour comes out red, so white gives the most contrast |
+| **Candy cane stripes** (Shading: Flat) | Porch columns and posts | Real columns are already round, so use flat stripes |
+| **Tree lights** | A rectangle around an evergreen in the yard | Strands of bulbs and a star. The needles catch the light |
+| **Sleigh across the house** | The upper wall | A big silhouette in a travelling pool of moonlight, with a gold trail |
+| **Merry Christmas lettering** | A clear band of siding | Written on with a glowing pen. The text is editable |
+
+Avoid dark surfaces such as black shutters: they swallow light.
+
+**Choreography.** Each surface's **Scare** tab sets its show-moment content and
+a **Start after** delay, so one press of **SHOW** (the scare button reads SHOW
+in Christmas scenes) can cascade across the house. **Auto** in the show bar
+runs the show every few minutes while the editor is open.
+
+**Night preview.** Add a photo of the house taken from the projector's spot
+with **House photo**, then tick **Night preview**. The stage shows the photo as
+the house at night with the projection landing on it in each surface's own
+colour: what white trim, black shutters and a red door really do to the
+content.
+
+**Template.** `examples/christmas-house.json` is a complete show for a
+two-storey colonial: candles and trim lights on five windows, door-frame,
+roofline, porch-roof and railing lights, candy-cane porch columns, a wrapped
+door around its wreath, lights on a spruce, a sleigh across the upper wall and
+lettering on the siding band. Its show cascades over about 24 seconds:
+1. The trim lights switch to a rainbow chase.
+2. The sleigh crosses the upper wall.
+3. Each window bursts bright as the sleigh passes.
+4. The door shines, the columns spin, the lettering rewrites and the tree
+   sparkles.
+
+Load it with **Import JSON**, add your house photo, then line each surface up
+with your own windows and door: drag it, then use Warp for the corners.
+
 ## Fireplace (Halloween and Christmas)
 
 A detailed hearth for a wall, garage door or chimney breast: simulated
@@ -219,7 +263,9 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `output.html`, `js/output.js` – projector output window.
 - `js/scene.js`, `js/renderer.js` – WebGL homography renderer and media/effect sources.
 - `js/effects.js` – built-in effects and theme tags. Add your own by adding an entry to `EFFECTS`.
+- `js/effects-house.js` – effects designed for real architecture (outline lights, window candle, wrapped door, tree lights, sleigh, lettering).
 - `js/effects-christmas.js`, `js/effects-fireplace.js`, `js/fx-util.js` – the Christmas pack, the fireplace, and helpers shared by effect packs.
+- `examples/christmas-house.json` – a complete Christmas show template for a two-storey house.
 - `js/editor/scenes.js` – scenes and the Christmas/Halloween starters.
 - `js/live.js` – live video sources (cameras, capture devices, window capture).
 - `media/` – your videos/images. `projects/` – saved projects.

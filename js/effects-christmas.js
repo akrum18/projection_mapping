@@ -280,7 +280,7 @@ CHRISTMAS.aurora = {
 };
 
 // ---------------------------------------------------------------- santa's sleigh
-function drawSleigh(ctx, t) {
+export function drawSleigh(ctx, t) {
   ctx.lineCap = "round"; ctx.lineJoin = "round";
   // reindeer
   for (let i = 0; i < 4; i++) {

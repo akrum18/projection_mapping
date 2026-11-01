@@ -4,6 +4,7 @@
 // Extra packs (effects-christmas.js) are merged in below and tagged by theme.
 import { CHRISTMAS } from "./effects-christmas.js";
 import { FIREPLACE } from "./effects-fireplace.js";
+import { HOUSE } from "./effects-house.js";
 
 const rnd = (a = 1, b = 0) => b + Math.random() * (a - b);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -586,7 +587,7 @@ export const EFFECTS = {
   },
 };
 
-Object.assign(EFFECTS, FIREPLACE, CHRISTMAS);
+Object.assign(EFFECTS, FIREPLACE, HOUSE, CHRISTMAS);
 
 // Themes shown as filter chips in the editor. An effect can belong to several.
 export const THEMES = [["all", "All"], ["halloween", "Halloween"], ["christmas", "Christmas"], ["basics", "Basics"]];
@@ -597,6 +598,7 @@ const TAGS = {
   rain: ["halloween", "basics"], grid: ["basics"], solid: ["basics"],
 };
 for (const k of Object.keys(CHRISTMAS)) TAGS[k] = ["christmas"];
+for (const k of Object.keys(HOUSE)) TAGS[k] = ["christmas"];
 TAGS.fireplace = ["halloween", "christmas"];
 for (const [k, v] of Object.entries(EFFECTS)) v.tags = TAGS[k] || ["basics"];
 // Effects that suit more than one holiday start with that holiday's look when picked
