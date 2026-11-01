@@ -232,6 +232,7 @@ export class Scene {
       r.drawSurface(src.tex, corners, {
         opacity: sf.opacity, feather: sf.feather, crop: sf.crop, flipH: sf.flipH, flipV: sf.flipV,
         brightness: (sf.brightness ?? 1) * (state.brightness ?? 1), tint: sf.tint, blend: sf.blend,
+        keyBlack: sf.keyBlack !== false,
       });
     }
     this.pruneSources(now);

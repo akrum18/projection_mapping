@@ -250,6 +250,8 @@ function lookTab(s, body) {
   body.appendChild(range("Soft edge", () => s.feather, (v) => (s.feather = v), 0, 0.5, 0.01, pct));
   body.appendChild(color("Tint", () => s.tint, (v) => (s.tint = v)));
   body.appendChild(seg("Blend", [["normal", "Normal"], ["add", "Glow"], ["multiply", "Multiply"]], () => s.blend, (v) => (s.blend = v)));
+  body.appendChild(seg("Black areas", [["see", "See-through"], ["solid", "Solid"]], () => (s.keyBlack !== false ? "see" : "solid"), (v) => (s.keyBlack = v === "see")));
+  body.appendChild(h("p", "medianote", "See-through lets surfaces underneath show wherever this one is black, so snow, lights and sparkles layer over other surfaces. Choose Solid to use a black surface as a mask that hides what's below."));
   body.appendChild(h("p", "medianote", "Glow adds light, so eyes, fire and candles blend nicely over other surfaces. Soft edge fades the borders into darkness."));
   body.appendChild(toggles([["Flip ↔", () => s.flipH, (v) => (s.flipH = v)], ["Flip ↕", () => s.flipV, (v) => (s.flipV = v)], ["Visible", () => s.visible, (v) => (s.visible = v)]]));
 }

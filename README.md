@@ -106,9 +106,9 @@ and Christmas tree (plus Fire, Candle flicker and Text message).
 - **Christmas starter** puts candy canes on tall columns, icicles on roof
   lines, string lights on other long strips, northern lights or the sleigh on
   big areas, and trees, snow, ornaments and presents in windows.
-- **Snowfall** with a transparent background stacks over any other surface.
-  Add a surface, click **Fill output** in Position, and put it on top of the
-  list for snow over the whole house.
+- **Snowfall** stacks over any other surface. Add a surface, click **Fill
+  output** in Position, and put it on top of the list for snow over the whole
+  house.
 - **String lights** has palettes (classic, warm white, red & green, blue &
   white, rainbow) and twinkle, chase, fade or steady patterns.
 - **Candy cane stripes** shades like a round pillar by default; switch
@@ -143,9 +143,12 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - **Soft edge** feathers a surface's borders so it blends into darkness.
 - **Crop** shows only part of a video/image on a surface; duplicate a surface and
   crop differently to split one video across several objects.
-- **Blend: Add** makes glows (eyes, fire, candle) composite nicely over other layers.
-- Transparent-background effects (fog, eyes, blood, rain, spiders) can be stacked
-  on top of a video surface for layered looks.
+- **Layering:** black means "no light", so wherever a surface is black the
+  surfaces under it show through (dim areas are partly see-through, bright
+  areas cover). Snow, eyes, fog, sparkles and lights stack over anything. To
+  use a black surface as a mask that hides what's below, set **Look › Black
+  areas** to **Solid**.
+- **Blend: Glow** adds light, for extra-bright eyes, fire and candles over other layers.
 - Looping video formats that work everywhere: MP4 (H.264) or WebM.
 
 ## Files

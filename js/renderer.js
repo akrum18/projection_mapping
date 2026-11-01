@@ -20,6 +20,7 @@ varying vec2 vUV;
 uniform sampler2D uTex;
 uniform float uOpacity;
 uniform float uFeather;
+uniform float uKey;
 uniform vec4 uCrop;
 uniform vec2 uFlip;
 uniform vec3 uTint;
@@ -27,6 +28,10 @@ void main() {
   vec2 uv = mix(vUV, 1.0 - vUV, uFlip);
   vec2 tuv = mix(uCrop.xy, uCrop.zw, uv);
   vec4 c = texture2D(uTex, tuv);
+  // Black is "no light" on a projector, so let it show what's underneath: coverage
+  // follows brightness (black = clear, white = solid). Colour is premultiplied, so
+  // soft glows and greys add their light without darkening the surface below.
+  if (uKey > 0.5) c.a = max(c.r, max(c.g, c.b));
   float e = 1.0;
   if (uFeather > 0.0) {
     e = smoothstep(0.0, uFeather, vUV.x) * smoothstep(0.0, uFeather, 1.0 - vUV.x)
@@ -72,7 +77,7 @@ export class Renderer {
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
     gl.useProgram(prog);
     this.u = {};
-    for (const n of ["uH", "uRes", "uTex", "uOpacity", "uFeather", "uCrop", "uFlip", "uTint"]) this.u[n] = gl.getUniformLocation(prog, n);
+    for (const n of ["uH", "uRes", "uTex", "uOpacity", "uFeather", "uCrop", "uFlip", "uTint", "uKey"]) this.u[n] = gl.getUniformLocation(prog, n);
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
@@ -136,6 +141,7 @@ export class Renderer {
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.uniform1f(this.u.uOpacity, o.opacity ?? 1);
     gl.uniform1f(this.u.uFeather, o.feather ?? 0);
+    gl.uniform1f(this.u.uKey, o.keyBlack && (o.blend || "normal") === "normal" ? 1 : 0);
     const cr = o.crop || [0, 0, 1, 1];
     gl.uniform4f(this.u.uCrop, cr[0], cr[1], cr[2], cr[3]);
     gl.uniform2f(this.u.uFlip, o.flipH ? 1 : 0, o.flipV ? 1 : 0);
