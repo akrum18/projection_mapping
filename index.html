@@ -2,45 +2,225 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Projector Mapper</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-max" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-min" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-resize" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></symbol>
+    <symbol id="i-warp" viewBox="0 0 24 24"><path d="M4 5l16 3-2 12-13-3z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="currentColor"/></symbol>
+    <symbol id="i-black" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></symbol>
+    <symbol id="i-outline" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-magnet" viewBox="0 0 24 24"><path d="M6 3v8a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+    <symbol id="i-projector" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="2"/><circle cx="16" cy="12" r="2.5"/><path d="M6 17v2M18 17v2"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M12 2v8M8 4v7M16 4v7M4 9v5a8 8 0 0 0 16 0V8"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
+  </defs>
+</svg>
+
 <header class="topbar">
-  <div class="brand">🎃 Projector Mapper</div>
-  <button id="btnOutput" class="primary">Open output window</button>
-  <span id="outStatus" class="status">output: not open</span>
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c5 0 9 3 9 8s-4 7-9 7-9-2-9-7 4-8 9-8z" fill="#ff8a1f"/><path d="M12 6c0-2 1-3 3-4" stroke="#7bbf5a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M8 12l2 2M16 12l-2 2M9 17h6" stroke="#1a0d00" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span>Projector Mapper</span>
+  </div>
+  <span class="vsep"></span>
+  <div class="menu-wrap">
+    <button id="projBtn" class="ghost strong" aria-haspopup="true" aria-expanded="false"><span id="projTitle">halloween</span><svg class="i sm"><use href="#i-chev"/></svg></button>
+    <div id="projMenu" class="popover" hidden>
+      <label class="pfield">Project name<input id="projName" type="text" spellcheck="false"></label>
+      <button id="mSave" class="mi">Save to this computer<kbd>Ctrl S</kbd></button>
+      <button id="mNew" class="mi">New empty project</button>
+      <div class="msub">Open a saved project</div>
+      <div id="projList" class="mlist"></div>
+      <div class="mrow"><button id="mExport" class="btn sm">Export JSON</button><button id="mImport" class="btn sm">Import JSON</button></div>
+    </div>
+  </div>
+  <span id="saveStatus" class="dim small"></span>
+  <span class="vsep"></span>
+  <button id="btnUndo" class="icon" aria-label="Undo" title="Undo · Ctrl+Z"><svg class="i"><use href="#i-undo"/></svg></button>
+  <button id="btnRedo" class="icon" aria-label="Redo" title="Redo · Ctrl+Shift+Z"><svg class="i"><use href="#i-redo"/></svg></button>
   <div class="spacer"></div>
-  <button id="btnScare" class="danger" title="Space">SCARE!</button>
-  <button id="btnBlackout" class="toggle" title="B">Blackout</button>
-  <button id="btnOutlines" class="toggle" title="O">Outlines on output</button>
-  <button id="btnTest" class="toggle" title="T">Test pattern</button>
-  <label class="inline">Master <input type="range" id="master" min="0" max="1.5" step="0.01" value="1"></label>
+  <button id="btnOutput" class="btn outpill" title="Open or focus the projector window"><span class="dot"></span><span id="outStatus">Open projector window</span></button>
+  <button id="btnWall" class="btn" aria-pressed="false" title="Show handles on the projector and drag them there, while looking at the real object"><svg class="i"><use href="#i-hand"/></svg>Edit on wall</button>
+  <div class="menu-wrap">
+    <button id="btnRemote" class="btn" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-phone"/></svg>Remote</button>
+    <div id="remoteMenu" class="popover right" hidden>
+      <div class="ptitle">Phone remote</div>
+      <p class="dim">On a phone on the same Wi‑Fi, open:</p>
+      <code id="remoteUrl" class="bigcode">…</code>
+      <p class="dim small">Big SCARE, BLACKOUT and outline buttons. Works while this editor is open.</p>
+    </div>
+  </div>
+  <button id="btnHelp" class="icon" aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?"><b>?</b></button>
+  <button id="btnFull" class="btn" title="Fullscreen editing · F"><svg class="i"><use href="#i-max"/></svg>Fullscreen<kbd>F</kbd></button>
 </header>
+
 <main>
-  <aside class="panel left">
-    <h2>Surfaces <button id="btnAdd" class="small">+ Add</button></h2>
-    <ul id="surfaceList" class="list"></ul>
-    <h2>Project</h2>
-    <div class="row"><input id="projName" placeholder="project name"><button id="btnSave" class="small">Save</button></div>
-    <div class="row"><select id="projList"></select><button id="btnLoad" class="small">Load</button></div>
-    <div class="row"><button id="btnExport" class="small">Export JSON</button><button id="btnImport" class="small">Import JSON</button><button id="btnNew" class="small">New</button></div>
-    <input type="file" id="importFile" hidden accept=".json">
-    <h2>Media <button id="btnRefreshMedia" class="small" title="Refresh">↻</button></h2>
-    <p class="hint">Drop videos or images anywhere on this page to upload them into the <code>media/</code> folder. Click one to assign it to the selected surface.</p>
-    <ul id="mediaList" class="list"></ul>
-    <h2>Remote</h2>
-    <p class="hint" id="remoteHint">Open <code>remote.html</code> on your phone (same Wi‑Fi) for a big SCARE button.</p>
+  <aside class="panel left" aria-label="Surfaces">
+    <div class="phead"><h2>Surfaces</h2><button id="btnAdd" class="btn sm"><svg class="i sm"><use href="#i-plus"/></svg>Add</button></div>
+    <ul id="surfaceList" class="layers"></ul>
+    <p class="hint">Top of the list draws on top. Drag rows to reorder, double-click a name to rename. Lock surfaces once they are aligned.</p>
   </aside>
-  <section class="stage">
-    <div id="previewWrap"><canvas id="gl"></canvas><canvas id="ov"></canvas></div>
-    <div class="stagebar">Drag corners to warp · drag inside a surface to move it · arrow keys nudge (Shift = ×10) · 1–9 select · Del delete · Ctrl+Z undo · Space scare · B blackout · O outlines · T test pattern</div>
+
+  <section class="stage" id="stage">
+    <canvas id="gl"></canvas>
+    <canvas id="ov" tabindex="0" aria-label="Projector stage: drag surfaces to move, handles to resize"></canvas>
+
+    <div id="ctxbar" class="ctxbar" hidden>
+      <div class="seg">
+        <button data-mode="transform" title="Move, resize and rotate"><svg class="i"><use href="#i-resize"/></svg>Resize</button>
+        <button data-mode="warp" title="Corner-pin warp · W"><svg class="i"><use href="#i-warp"/></svg>Warp</button>
+      </div>
+      <span class="vsep"></span>
+      <button id="ctxContent" class="ghost" title="Change what this surface shows"><span id="ctxThumb" class="thumb"></span><span id="ctxLabel"></span><svg class="i sm"><use href="#i-chev"/></svg></button>
+      <span class="vsep"></span>
+      <button id="ctxDup" class="icon" aria-label="Duplicate" title="Duplicate · Ctrl+D"><svg class="i"><use href="#i-copy"/></svg></button>
+      <button id="ctxLock" class="icon" aria-label="Lock position" title="Lock position · L"><svg class="i"><use href="#i-unlock"/></svg></button>
+      <button id="ctxDel" class="icon danger-text" aria-label="Delete" title="Delete · Del"><svg class="i"><use href="#i-trash"/></svg></button>
+    </div>
+    <div id="lockbar" class="ctxbar" hidden><svg class="i"><use href="#i-lock"/></svg><span>Locked in place</span><button id="lockUnlock" class="btn sm">Unlock</button></div>
+
+    <div id="firstRun" class="firstrun" hidden>
+      <div class="frcard">
+        <h3>Map your first surface</h3>
+        <p class="dim">Three steps. You can change everything later.</p>
+        <div id="frStep1" class="step"><span class="num"><b>1</b><svg class="i"><use href="#i-check"/></svg></span><div><b>Connect the projector</b><p id="frOutputText" class="dim"></p><button id="frOpenOutput" class="btn sm">Open projector window</button></div></div>
+        <div class="step"><span class="num"><b>2</b></span><div><b>Add a surface</b><p class="dim">A box appears on the wall. Drag it over a window, door or prop, then switch to Warp to pin its corners.</p><button id="frAdd" class="btn on sm">Add surface</button></div></div>
+        <div class="step"><span class="num"><b>3</b></span><div><b>Pick what it shows</b><p class="dim">Choose an effect or drop in your own video from the panel on the right.</p></div></div>
+      </div>
+    </div>
+
+    <div class="stagectl">
+      <button id="zoomOut" class="icon" aria-label="Zoom out" title="Zoom out · −"><svg class="i"><use href="#i-minus"/></svg></button>
+      <button id="zoomLabel" class="ghost mono" title="Fit to window · 0">Fit</button>
+      <button id="zoomIn" class="icon" aria-label="Zoom in" title="Zoom in · +"><svg class="i"><use href="#i-plus"/></svg></button>
+      <span class="vsep"></span>
+      <button id="btnSnap" class="btn sm on" aria-pressed="true" title="Snap to edges, centres and other surfaces (hold Ctrl/⌘ while dragging to ignore)"><svg class="i sm"><use href="#i-magnet"/></svg>Snap</button>
+      <div class="menu-wrap">
+        <button id="btnRef" class="btn sm" aria-haspopup="true" aria-expanded="false" title="Trace over a photo of the real object"><svg class="i sm"><use href="#i-image"/></svg>House photo</button>
+        <div id="refMenu" class="popover up" hidden>
+          <div class="ptitle">Tracing photo</div>
+          <p class="dim small">A photo of the house shown dimmed on this stage only, never on the projector. Take it from where the projector stands.</p>
+          <div class="mrow"><button id="refChoose" class="btn sm"><svg class="i sm"><use href="#i-upload"/></svg>Choose photo</button><button id="refCam" class="btn sm">Use webcam</button></div>
+          <label class="check"><input id="refShow" type="checkbox"> Show on stage</label>
+          <label class="pfield">Opacity<input id="refOpacity" type="range" min="0.05" max="1" step="0.05"></label>
+          <button id="refRemove" class="mi danger-text">Remove photo</button>
+        </div>
+      </div>
+    </div>
+    <div id="readout" class="readout mono" hidden></div>
+
+    <div id="fsPill" class="fspill">
+      <button id="fsExit" class="btn"><svg class="i"><use href="#i-min"/></svg>Exit<kbd>Esc</kbd></button>
+      <span class="vsep"></span>
+      <div class="seg">
+        <button data-mode="transform">Resize</button>
+        <button data-mode="warp">Warp</button>
+      </div>
+      <button id="fsUndo" class="icon" aria-label="Undo"><svg class="i"><use href="#i-undo"/></svg></button>
+      <span id="fsSel" class="mono dim fssel"></span>
+      <span class="vsep"></span>
+      <button id="fsBlack" class="btn" aria-pressed="false">Blackout</button>
+      <button id="fsScare" class="scare sm"><svg class="i"><use href="#i-zap"/></svg>SCARE</button>
+    </div>
+    <div id="fsHint" class="fshint">Toolbar hides after 2 s · move to the top edge to bring it back · Esc exits</div>
   </section>
-  <aside class="panel right" id="props"><p class="hint">Add a surface to get started.</p></aside>
+
+  <aside class="panel right" id="inspector" aria-label="Inspector"></aside>
 </main>
-<div id="dropHint">Drop files to upload to media/</div>
-<div id="toast"></div>
+
+<footer class="showbar">
+  <span class="showlabel">SHOW</span>
+  <button id="btnScare" class="scare" title="Fire every surface's scare · Space"><svg class="i"><use href="#i-zap"/></svg>SCARE<kbd>Space</kbd></button>
+  <button id="btnBlackout" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-black"/></svg>Blackout<kbd>B</kbd></button>
+  <button id="btnOutlines" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-outline"/></svg>Outlines on wall<kbd>O</kbd></button>
+  <button id="btnTest" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-grid"/></svg>Test pattern<kbd>T</kbd></button>
+  <div class="spacer"></div>
+  <svg class="i dim" aria-hidden="true"><use href="#i-sun"/></svg>
+  <label for="master" class="dim">Master</label>
+  <input type="range" id="master" min="0" max="1.5" step="0.01" value="1">
+  <span id="masterVal" class="mono dim small">100%</span>
+</footer>
+
+<div id="helpModal" class="modal" hidden>
+  <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="mhead"><h3 id="helpTitle">Keyboard shortcuts</h3><button id="helpClose" class="icon" aria-label="Close">✕</button></div>
+    <div class="keys">
+      <div><h4>Editing</h4>
+        <dl>
+          <dt>Drag surface</dt><dd>Move (snaps; hold Ctrl/⌘ to move freely)</dd>
+          <dt>Drag handle</dt><dd>Resize · Shift keeps proportions · Alt from centre</dd>
+          <dt>Round handle</dt><dd>Rotate · Shift snaps to 15°</dd>
+          <dt><kbd>W</kbd> or double-click</dt><dd>Switch Resize / Warp</dd>
+          <dt><kbd>Tab</kbd></dt><dd>Next corner (Warp)</dd>
+          <dt><kbd>←↑→↓</kbd></dt><dd>Nudge 1 px · Shift 10 px</dd>
+          <dt><kbd>Ctrl D</kbd></dt><dd>Duplicate</dd>
+          <dt><kbd>L</kbd></dt><dd>Lock / unlock</dd>
+          <dt><kbd>Del</kbd></dt><dd>Delete</dd>
+          <dt><kbd>Ctrl Z</kbd> / <kbd>Ctrl Shift Z</kbd></dt><dd>Undo / redo</dd>
+          <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Select surface</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Clear corner, then selection</dd>
+        </dl>
+      </div>
+      <div><h4>View</h4>
+        <dl>
+          <dt><kbd>F</kbd></dt><dd>Fullscreen editing</dd>
+          <dt>Scroll / pinch</dt><dd>Zoom at the cursor</dd>
+          <dt>Drag empty stage</dt><dd>Pan (or middle / right drag)</dd>
+          <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Zoom in / out / fit</dd>
+        </dl>
+        <h4>Show</h4>
+        <dl>
+          <dt><kbd>Space</kbd></dt><dd>SCARE</dd>
+          <dt><kbd>B</kbd></dt><dd>Blackout</dd>
+          <dt><kbd>O</kbd></dt><dd>Outlines on wall</dd>
+          <dt><kbd>T</kbd></dt><dd>Test pattern</dd>
+          <dt><kbd>Ctrl S</kbd></dt><dd>Save project</dd>
+          <dt><kbd>?</kbd></dt><dd>This sheet</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="camModal" class="modal" hidden>
+  <div class="mcard" role="dialog" aria-modal="true" aria-labelledby="camTitle">
+    <div class="mhead"><h3 id="camTitle">Take a tracing photo</h3><button id="camClose" class="icon" aria-label="Close">✕</button></div>
+    <p class="dim">Point the camera at the house from as close to the projector as you can.</p>
+    <video id="camVideo" autoplay playsinline muted></video>
+    <div class="mrow end"><button id="camShot" class="btn on">Capture</button></div>
+  </div>
+</div>
+
+<div id="dropHint">Drop videos or images to add them to My media</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="importFile" hidden accept=".json,application/json">
+<input type="file" id="refFile" hidden accept="image/*">
+<input type="file" id="uploadFile" hidden multiple accept="video/*,image/*">
 <script type="module" src="js/editor.js"></script>
 </body>
 </html>

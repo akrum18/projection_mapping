@@ -1,6 +1,6 @@
 # Editor UI/UX redesign
 
-Status: proposal. Clickable prototype: https://claude.ai/artifact/G3GHWDQ8eW5RF782ErkCPx
+Status: implemented (see README for usage). Clickable prototype: https://claude.ai/artifact/G3GHWDQ8eW5RF782ErkCPx
 (4 boards: editor, warp mode, fullscreen, first run).
 
 ## Problems with the current editor
