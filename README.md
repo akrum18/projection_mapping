@@ -67,6 +67,36 @@ Click **Remote** in the top bar for the address (it uses your LAN IP). Open it
 on a phone on the same Wi‑Fi for big SCARE / BLACKOUT buttons, outlines and
 **Next scene**.
 
+## Live video (stream from a phone or another computer)
+
+In the inspector's **Content** tab, pick **Live** to put a live feed on a
+surface:
+
+- **Camera or capture device**: webcams, HDMI capture dongles, OBS Virtual
+  Camera, or a phone set up as a webcam. On Windows 11, an Android phone can
+  be a webcam via Settings › Bluetooth & devices › Mobile devices. Phone
+  webcam apps work too.
+- **Window capture**: any window on this computer. To show a phone's or
+  another PC's screen, let them cast to this computer first. On Windows, go
+  to Settings › System › Projecting to this PC › Optional features, add
+  **Wireless Display**, turn projecting on, and open the Wireless Display app.
+  Then cast from Android (Cast / Smart View / Screen mirroring) or from
+  another Windows PC (Win+K), and pick that window here. iPhones can't cast to
+  Windows; use an AirPlay receiver app on the PC and capture its window
+  instead.
+
+Notes:
+
+- Browsers only allow cameras and screen capture on secure origins, so open
+  the editor at **http://localhost:8787** on the projector computer (not its
+  LAN address).
+- Each window captures on its own. Cameras start automatically. Window
+  capture needs one click in each window: the editor shows a notice, and the
+  projector window shows a **Start live window** button. Repeat after
+  reloading.
+- Cameras are remembered by name, so the projector window finds the same one
+  even though browsers give it a different id there.
+
 ## Christmas
 
 Effects: Snowfall, String lights, Candy cane stripes, Wrapped present,
@@ -129,4 +159,5 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `js/effects.js` – built-in effects and theme tags. Add your own by adding an entry to `EFFECTS`.
 - `js/effects-christmas.js`, `js/fx-util.js` – the Christmas pack and helpers shared by effect packs.
 - `js/editor/scenes.js` – scenes and the Christmas/Halloween starters.
+- `js/live.js` – live video sources (cameras, capture devices, window capture).
 - `media/` – your videos/images. `projects/` – saved projects.

@@ -3,6 +3,7 @@
 import { Renderer } from "./renderer.js";
 import { EFFECTS, effectParams } from "./effects.js";
 import { surfaceSizePx } from "./state.js";
+import { liveKey, liveVideo, liveSpecs, releaseUnused } from "./live.js";
 
 const MAX_FX = 768;
 
@@ -19,6 +20,7 @@ export class Scene {
 
   setState(state) {
     this.state = state;
+    releaseUnused(new Set(liveSpecs(state).keys()));
     // keep video settings in sync
     for (const sf of state.surfaces) {
       for (const slot of ["content", "scare"]) {
@@ -32,6 +34,7 @@ export class Scene {
 
   keyFor(sf, slot, spec) {
     if (spec.type === "effect") return `fx:${sf.id}:${slot}`;
+    if (spec.type === "live") return "live:" + liveKey(spec);
     if (spec.type === "media") {
       const isVideo = /\.(mp4|webm|mov|m4v|ogv|mkv)(\?|$)/i.test(spec.url || "");
       if (!isVideo) return `img:${spec.url}`;
@@ -55,7 +58,9 @@ export class Scene {
     let src = this.sources.get(key);
     if (!src) {
       src = { key, kind: null, tex: this.renderer.createTexture(), ready: false, lastUsed: 0 };
-      if (spec.type === "effect") {
+      if (spec.type === "live") {
+        src.kind = "live";
+      } else if (spec.type === "effect") {
         src.kind = "effect";
         src.canvas = document.createElement("canvas");
         src.ctx = src.canvas.getContext("2d");
@@ -154,7 +159,11 @@ export class Scene {
   updateSource(src, sf, slot, spec, t, dt, now) {
     src.lastUsed = now;
     if (src.kind === "effect") src.ready = this.updateEffect(src, sf, spec, t, dt);
-    else if (src.kind === "video") {
+    else if (src.kind === "live") {
+      const v = liveVideo(spec);
+      if (v) this.renderer.upload(src.tex, v);
+      src.ready = !!v;
+    } else if (src.kind === "video") {
       const el = src.el;
       if (el.readyState >= 2) { this.renderer.upload(src.tex, el); src.ready = true; }
       if (slot === "content" && el.paused && !el.ended && !src.playing && now - (src.playAttempt || 0) > 2000) {

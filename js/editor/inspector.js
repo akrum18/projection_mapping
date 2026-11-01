@@ -2,7 +2,8 @@
 import { EFFECTS, THEMES, defaultParams, effectsFor } from "../effects.js";
 import { app, bc, on, sel, sync, commit, addSurface } from "./store.js";
 import { scene } from "./stage.js";
-import { effectThumb, animateInto, mediaThumb, isVideoUrl } from "../thumbs.js";
+import { effectThumb, animateInto, mediaThumb, isVideoUrl, specThumb } from "../thumbs.js";
+import { liveSupported, liveStatus, listCameras, askCameraPermission, startScreen, retryLive, onLiveChange } from "../live.js";
 import { bbox, toPx, toNorm, remapBox, rotate, angleOf } from "../geometry.js";
 
 const root = document.getElementById("inspector");
@@ -155,10 +156,65 @@ function mediaTiles(current, choose) {
   return wrap;
 }
 
+// ---------- live video ----------
+const STATUS_TEXT = { live: "Streaming in this preview", starting: "Starting…", "needs-click": "Not streaming yet", ended: "The stream ended", idle: "Waiting for the camera" };
+function liveStatusRow(spec) {
+  const st = liveStatus(spec);
+  const row = h("div", "livestat " + st.status);
+  row.append(h("span", "dot"), h("span", null, st.status === "error" || st.status === "unsupported" ? st.error : STATUS_TEXT[st.status] || st.status));
+  if (!["live", "starting", "unsupported"].includes(st.status)) {
+    const b = h("button", "btn sm on", spec.kind === "screen" ? "Pick window" : "Retry");
+    b.addEventListener("click", () => retryLive(spec));
+    row.appendChild(b);
+  }
+  return row;
+}
+function livePanel(s, body, choose) {
+  if (!liveSupported()) {
+    body.appendChild(h("p", "medianote", "Live video only works when the editor is opened at http://localhost:8787 on the projector computer. Browsers block cameras and screen capture on other plain-http addresses."));
+    return;
+  }
+  const isLive = s.content.type === "live";
+  if (isLive) {
+    body.appendChild(liveStatusRow(s.content));
+    body.appendChild(h("p", "medianote", s.content.kind === "screen"
+      ? "The projector window captures on its own: click its “Start live window” button once, and pick the same window."
+      : "The projector window opens the same camera by itself."));
+  }
+  body.appendChild(h("h4", null, "Camera or capture device"));
+  const cams = h("div", "tiles");
+  body.appendChild(cams);
+  listCameras().then((list) => {
+    if (!list.length) { cams.replaceWith(h("p", "medianote", "No cameras found. Plug in a webcam or HDMI capture card, or set your phone up as a camera (see below).")); return; }
+    for (const c of list) {
+      const spec = { type: "live", kind: "camera", deviceId: c.deviceId, label: c.label };
+      cams.appendChild(tile(spec, c.label, isLive && s.content.kind === "camera" && s.content.deviceId === c.deviceId, () => choose(spec), { thumb: specThumb(spec) }));
+    }
+    if (!list[0].named) {
+      const b = h("button", "btn sm", "Allow camera access to show device names");
+      b.addEventListener("click", async () => { try { await askCameraPermission(); } catch (e) {} render(); });
+      cams.after(b);
+    }
+  }).catch(() => {});
+  body.appendChild(h("h4", null, "A window or screen"));
+  const g = h("div", "tiles");
+  const screen = { type: "live", kind: "screen" };
+  g.appendChild(tile(screen, "Window capture", isLive && s.content.kind === "screen", () => { choose(screen); startScreen(); }, { thumb: specThumb(screen) }));
+  body.appendChild(g);
+  const det = h("details"); det.appendChild(h("summary", null, "Stream from a phone or another computer"));
+  const db = h("div", "details-body medianote");
+  db.innerHTML = `
+    <p><b>Phone or PC screen (Windows):</b> Settings › System › Projecting to this PC › Optional features, add <b>Wireless Display</b>, turn projecting on, then open the Wireless Display app. Cast from Android (Cast, Smart View or Screen mirroring) or from another Windows PC (Win+K). Pick <b>Window capture</b> here and choose the Wireless Display window.</p>
+    <p><b>Phone camera:</b> Windows 11 can use an Android phone as a webcam (Settings › Bluetooth &amp; devices › Mobile devices). Phone webcam apps work too. Either one shows up above as a camera.</p>
+    <p><b>Capture card, OBS:</b> HDMI capture dongles and OBS Virtual Camera also show up as cameras.</p>
+    <p><b>iPhone:</b> iPhones can't cast to Windows. Use a webcam app, or an AirPlay receiver app on the PC and capture its window.</p>`;
+  det.appendChild(db); body.appendChild(det);
+}
+
 // ---------- tabs ----------
 function contentTab(s, body) {
   const sw = h("div", "seg");
-  for (const [k, name] of [["effects", "Effects"], ["media", "My media"]]) {
+  for (const [k, name] of [["effects", "Effects"], ["media", "My media"], ["live", "Live"]]) {
     const b = h("button", app.ui.source === k ? "on" : "", name);
     b.addEventListener("click", () => { app.ui.source = k; render(); });
     sw.appendChild(b);
@@ -168,8 +224,9 @@ function contentTab(s, body) {
     if (spec.type === "effect" && s.content.type === "effect" && s.content.effect === spec.effect) return;
     s.content = spec; commit(); render();
   };
-  if (app.ui.source !== "media") body.appendChild(themeChips());
-  body.appendChild(app.ui.source === "media" ? mediaTiles(s.content, choose) : effectTiles(s.content, choose));
+  if (app.ui.source === "live") livePanel(s, body, choose);
+  else if (app.ui.source === "media") body.appendChild(mediaTiles(s.content, choose));
+  else { body.appendChild(themeChips()); body.appendChild(effectTiles(s.content, choose)); }
   if (s.content.type === "effect") { body.appendChild(h("h4", null, (EFFECTS[s.content.effect]?.label || "Effect") + " settings")); effectParams(s.content, body); }
   if (s.content.type === "media" && isVideoUrl(s.content.url)) {
     body.appendChild(h("h4", null, "Video"));
@@ -322,3 +379,4 @@ on("change", () => { if (!root.contains(document.activeElement) || document.acti
 on("media", render);
 on("sync", updatePos);
 on("openTab", (t) => { app.ui.tab = t; render(); });
+onLiveChange(() => { const s = sel(); if (s && app.ui.tab === "content" && (app.ui.source === "live" || s.content.type === "live")) render(); });

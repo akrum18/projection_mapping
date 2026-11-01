@@ -198,6 +198,15 @@ details[open] summary { margin-bottom: 10px; }
 .empty-ins { padding: 24px 16px; color: var(--dim); display: flex; flex-direction: column; gap: 10px; }
 .medianote { color: var(--faint); font-size: 12px; }
 
+/* live video */
+.livestat { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 12px; border-radius: 10px; background: #1a1a21; border: 1px solid var(--line); }
+.livestat > span:nth-child(2) { flex: 1; }
+.dot { width: 8px; height: 8px; border-radius: 4px; background: #6f6f7e; flex: none; }
+.livestat.live .dot, .livenote.live .dot { background: #ff4d4f; box-shadow: 0 0 8px #ff4d4f; }
+.livestat.error .dot, .livestat.ended .dot { background: #ffb020; }
+.livenote { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 12; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line2); box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: calc(100% - 24px); }
+body.focus .livenote { top: 64px; }
+
 /* modal, toast, drop */
 .modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.6); }
 .modal[hidden] { display: none; }

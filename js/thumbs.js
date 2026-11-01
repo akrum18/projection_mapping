@@ -76,9 +76,14 @@ export function mediaThumb(url, onReady) {
   return null;
 }
 
+const LIVE_THUMB = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100"><rect width="160" height="100" fill="#10131c"/>' +
+  '<circle cx="52" cy="50" r="9" fill="#ff4d4f"/><text x="68" y="58" font-family="sans-serif" font-weight="700" font-size="24" fill="#fff">LIVE</text></svg>');
+
 // Thumbnail URL for a content spec, or null while a video frame is loading.
 export function specThumb(spec, onReady) {
   if (!spec || spec.type === "none") return "";
+  if (spec.type === "live") return LIVE_THUMB;
   if (spec.type === "effect") return effectThumb(spec.effect, spec.params);
   return mediaThumb(spec.url, onReady);
 }
@@ -86,6 +91,7 @@ export function specThumb(spec, onReady) {
 export function specLabel(spec, media = []) {
   if (!spec || spec.type === "none") return "Nothing";
   if (spec.type === "effect") return EFFECTS[spec.effect]?.label || spec.effect;
+  if (spec.type === "live") return spec.kind === "screen" ? "Live: window capture" : `Live: ${spec.label || "camera"}`;
   const m = media.find((x) => x.url === spec.url);
   return m ? m.name : decodeURIComponent((spec.url || "").split("/").pop());
 }
