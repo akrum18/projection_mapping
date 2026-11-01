@@ -1,6 +1,7 @@
 // Inspector: tabs for Content, Look, Scare and Position of the selected surface.
 import { EFFECTS, THEMES, defaultParams, effectsFor, themedParams } from "../effects.js";
 import { app, bc, on, sel, sync, commit, addSurface } from "./store.js";
+import { currentScene } from "./scenes.js";
 import { scene } from "./stage.js";
 import { effectThumb, animateInto, mediaThumb, isVideoUrl, specThumb } from "../thumbs.js";
 import { liveSupported, liveStatus, listCameras, askCameraPermission, startScreen, retryLive, onLiveChange } from "../live.js";
@@ -257,15 +258,17 @@ function lookTab(s, body) {
 }
 
 function scareTab(s, body) {
-  body.appendChild(h("p", "medianote", "When SCARE fires (Space, the show bar or the phone remote), this surface switches to the clip below, plays it once, then goes back to its normal content."));
-  const choose = (spec) => { s.scare = { ...spec, duration: s.scare?.duration ?? 4 }; commit(); render(); };
+  const word = currentScene()?.theme === "christmas" ? "SHOW" : "SCARE";
+  body.appendChild(h("p", "medianote", `When ${word} fires (Space, the show bar, the phone remote or Auto), this surface switches to the clip below, plays it once, then goes back to its normal content. Give surfaces different "Start after" times to cascade the moment across the house.`));
+  const choose = (spec) => { s.scare = { ...spec, duration: s.scare?.duration ?? 4, delay: s.scare?.delay ?? 0 }; commit(); render(); };
   const g = h("div", "tiles");
   g.appendChild(tile({ type: "none" }, "Nothing", s.scare.type === "none", () => choose({ type: "none" }), { none: true }));
   for (const m of app.media) { const spec = { type: "media", url: m.url }; g.appendChild(tile(spec, m.name, sameSpec(s.scare, spec), () => choose(spec), { thumb: mediaThumb(m.url, () => render()) || "" })); }
   for (const [k, v] of effectsFor(app.ui.theme)) { const spec = { type: "effect", effect: k, params: themedParams(k, app.ui.theme) }; g.appendChild(tile(spec, v.label, sameSpec(s.scare, spec), () => choose(spec), { thumb: effectThumb(k, spec.params), effect: k })); }
   if (s.scare.type !== "none") {
     const vid = s.scare.type === "media" && isVideoUrl(s.scare.url);
-    if (!vid) body.appendChild(range("Hold for", () => s.scare.duration ?? 4, (v) => (s.scare.duration = v), 0.5, 30, 0.5, (v) => v + " s"));
+    body.appendChild(range("Start after", () => s.scare.delay ?? 0, (v) => (s.scare.delay = v), 0, 30, 0.5, (v) => v + " s"));
+    if (!vid) body.appendChild(range("Hold for", () => s.scare.duration ?? 4, (v) => (s.scare.duration = v), 0.5, 60, 0.5, (v) => v + " s"));
     else body.appendChild(h("p", "medianote", "Plays the whole video once."));
     if (s.scare.type === "effect") effectParams(s.scare, body);
     const t = h("button", "btn"); t.innerHTML = '<svg class="i"><use href="#i-play"/></svg>Test on this surface only';

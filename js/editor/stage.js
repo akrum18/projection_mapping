@@ -266,7 +266,17 @@ function frameLoop() {
   ctx.save();
   ctx.beginPath(); ctx.rect(v.ox, v.oy, v.sx, v.sy); ctx.clip();
   const img = refImage();
-  if (img && st.reference.show) { ctx.globalAlpha = st.reference.opacity; ctx.drawImage(img, v.ox, v.oy, v.sx, v.sy); ctx.globalAlpha = 1; }
+  if (img && st.reference.show && st.reference.night) {
+    // Night preview: each part of the house reflects a little ambient light plus the
+    // projector's light, in its own colour: photo x (ambient + projection). Shows what
+    // the red door, black shutters and white trim really do to the content.
+    ctx.fillStyle = "rgb(14,16,24)"; ctx.fillRect(v.ox, v.oy, v.sx, v.sy);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.drawImage(glc, parseFloat(glc.style.left) * dpr, parseFloat(glc.style.top) * dpr, glc.width, glc.height);
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(img, v.ox, v.oy, v.sx, v.sy);
+    ctx.globalCompositeOperation = "source-over";
+  } else if (img && st.reference.show) { ctx.globalAlpha = st.reference.opacity; ctx.drawImage(img, v.ox, v.oy, v.sx, v.sy); ctx.globalAlpha = 1; }
   if (st.testPattern) { ctx.translate(v.ox, v.oy); drawTestPattern(ctx, Math.round(v.sx), Math.round(v.sy)); ctx.setTransform(1, 0, 0, 1, 0, 0); }
   if (st.blackout) {
     ctx.fillStyle = "rgba(0,0,0,0.78)"; ctx.fillRect(v.ox, v.oy, v.sx, v.sy);

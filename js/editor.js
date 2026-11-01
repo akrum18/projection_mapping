@@ -121,13 +121,24 @@ bc.connectRelay(); // phone remote commands and projector windows on other compu
 on("popover", async (p) => { if (p === "remoteMenu") $("remoteUrl").textContent = `http://${await lanHost()}/remote.html`; });
 
 // ---------------- show bar ----------------
+let lastShow = performance.now();
 function scare() {
+  lastShow = performance.now();
   scene.triggerScare(null);
   bc.postMessage({ type: "scare" });
   for (const b of [$("btnScare"), $("fsScare")]) { b.classList.add("fire"); setTimeout(() => b.classList.remove("fire"), 600); }
 }
 function toggleFlag(k) { app.state[k] = !app.state[k]; commit(); }
 $("btnScare").addEventListener("click", scare);
+// Auto show: cycles Off → 2 → 5 → 10 → 15 minutes; the editor fires it on schedule
+const AUTO_STEPS = [0, 2, 5, 10, 15];
+$("btnAuto").addEventListener("click", () => {
+  const i = AUTO_STEPS.indexOf(app.state.autoShow || 0);
+  app.state.autoShow = AUTO_STEPS[(i + 1) % AUTO_STEPS.length];
+  lastShow = performance.now(); commit();
+  toast(app.state.autoShow ? `The show runs every ${app.state.autoShow} minutes while the editor is open` : "Auto show off");
+});
+setInterval(() => { const m = app.state.autoShow || 0; if (m > 0 && performance.now() - lastShow >= m * 60000) scare(); }, 1000);
 $("fsScare").addEventListener("click", scare);
 $("btnBlackout").addEventListener("click", () => toggleFlag("blackout"));
 $("fsBlack").addEventListener("click", () => toggleFlag("blackout"));
@@ -144,6 +155,10 @@ function updateBars() {
   $("master").value = st.brightness ?? 1;
   $("masterVal").textContent = Math.round((st.brightness ?? 1) * 100) + "%";
   $("btnUndo").disabled = !canUndo(); $("btnRedo").disabled = !canRedo();
+  const word = currentScene()?.theme === "christmas" ? "SHOW" : "SCARE";
+  $("scareLabel").textContent = word; $("fsScareLabel").textContent = word;
+  $("autoLabel").textContent = st.autoShow ? `Auto: ${st.autoShow} min` : "Auto: off";
+  $("btnAuto").setAttribute("aria-pressed", String(!!st.autoShow));
   $("projTitle").textContent = st.name || "untitled";
   $("saveStatus").textContent = app.serverSaved === null ? (st.surfaces.length ? "Not saved to a project yet" : "") : isDirty() ? "Unsaved changes" : "Saved";
   $("btnSnap").setAttribute("aria-pressed", String(app.ui.snap)); $("btnSnap").classList.toggle("on", app.ui.snap);
@@ -331,6 +346,7 @@ function setRef(patch) { Object.assign(app.state.reference, patch); commit(); sy
 function syncRefMenu() {
   const r = app.state.reference;
   $("refShow").checked = !!r.show; $("refShow").disabled = !r.url;
+  $("refNight").checked = !!r.night; $("refNight").disabled = !r.url;
   $("refOpacity").value = r.opacity; $("refRemove").hidden = !r.url;
 }
 on("popover", (p) => { if (p === "refMenu") syncRefMenu(); });
@@ -342,6 +358,7 @@ $("refFile").addEventListener("change", async (e) => {
   e.target.value = "";
 });
 $("refShow").addEventListener("change", (e) => setRef({ show: e.target.checked }));
+$("refNight").addEventListener("change", (e) => setRef({ night: e.target.checked, show: e.target.checked || app.state.reference.show }));
 $("refOpacity").addEventListener("input", (e) => { app.state.reference.opacity = +e.target.value; sync(); });
 $("refOpacity").addEventListener("change", commit);
 $("refRemove").addEventListener("click", () => setRef({ url: "", show: false }));

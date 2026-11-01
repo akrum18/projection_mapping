@@ -138,6 +138,7 @@
           <p class="dim small">A photo of the house shown dimmed on this stage only, never on the projector. Take it from where the projector stands.</p>
           <div class="mrow"><button id="refChoose" class="btn sm"><svg class="i sm"><use href="#i-upload"/></svg>Choose photo</button><button id="refCam" class="btn sm">Use webcam</button></div>
           <label class="check"><input id="refShow" type="checkbox"> Show on stage</label>
+          <label class="check"><input id="refNight" type="checkbox"> Night preview: see the projection on the house</label>
           <label class="pfield">Opacity<input id="refOpacity" type="range" min="0.05" max="1" step="0.05"></label>
           <button id="refRemove" class="mi danger-text">Remove photo</button>
         </div>
@@ -157,7 +158,7 @@
       <span id="fsSel" class="mono dim fssel"></span>
       <span class="vsep"></span>
       <button id="fsBlack" class="btn" aria-pressed="false">Blackout</button>
-      <button id="fsScare" class="scare sm"><svg class="i"><use href="#i-zap"/></svg>SCARE</button>
+      <button id="fsScare" class="scare sm"><svg class="i"><use href="#i-zap"/></svg><span id="fsScareLabel">SCARE</span></button>
     </div>
     <div id="fsHint" class="fshint">Click empty space for a clean preview · move to the top edge for the toolbar · Esc exits</div>
   </section>
@@ -167,7 +168,8 @@
 
 <footer class="showbar">
   <span class="showlabel">SHOW</span>
-  <button id="btnScare" class="scare" title="Fire every surface's scare · Space"><svg class="i"><use href="#i-zap"/></svg>SCARE<kbd>Space</kbd></button>
+  <button id="btnScare" class="scare" title="Fire every surface's scare / show moment · Space"><svg class="i"><use href="#i-zap"/></svg><span id="scareLabel">SCARE</span><kbd>Space</kbd></button>
+  <button id="btnAuto" class="btn tall" title="Run the show automatically every few minutes"><span id="autoLabel">Auto: off</span></button>
   <button id="btnBlackout" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-black"/></svg>Blackout<kbd>B</kbd></button>
   <button id="btnOutlines" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-outline"/></svg>Outlines on wall<kbd>O</kbd></button>
   <button id="btnTest" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-grid"/></svg>Test pattern<kbd>T</kbd></button>

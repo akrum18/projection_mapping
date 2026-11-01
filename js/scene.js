@@ -128,13 +128,8 @@ export class Scene {
       if (!spec || spec.type === "none" || !sf.visible) continue;
       const src = this.getSource(sf, "scare", spec);
       if (!src) continue;
-      if (src.kind === "video") {
-        try { src.el.currentTime = 0; } catch (e) {}
-        this.playVideo(src, sf, "scare");
-      } else if (src.kind === "effect") {
-        src.scratch = {}; // restart the effect from fresh
-      }
-      this.scares.set(sf.id, { start: now, key: src.key });
+      // "Start after" lets one press cascade across the house; the scare begins later
+      this.scares.set(sf.id, { start: now + Math.max(0, spec.delay || 0) * 1000, key: src.key, begun: false });
     }
   }
 
@@ -143,6 +138,12 @@ export class Scene {
     if (!sc) return false;
     const src = this.sources.get(sc.key);
     if (!src) { this.scares.delete(sf.id); return false; }
+    if (now < sc.start) return false; // still waiting for its turn
+    if (!sc.begun) {
+      sc.begun = true;
+      if (src.kind === "video") { try { src.el.currentTime = 0; } catch (e) {} this.playVideo(src, sf, "scare"); }
+      else if (src.kind === "effect") src.scratch = {}; // restart the effect from fresh
+    }
     const age = now - sc.start;
     let active;
     if (src.kind === "video") {
@@ -191,7 +192,10 @@ export class Scene {
     const p = effectParams(spec.effect, spec.params);
     const ctx = src.ctx;
     ctx.save();
-    try { def.draw(ctx, src.canvas.width, src.canvas.height, t, dt, p, src.scratch); } catch (e) { console.warn("effect error", spec.effect, e); }
+    // info: the surface's real size in projector pixels, so effects can size bulbs,
+    // lettering and strokes for the wall rather than for the texture.
+    const info = { wpx: size.w, hpx: size.h };
+    try { def.draw(ctx, src.canvas.width, src.canvas.height, t, dt, p, src.scratch, info); } catch (e) { console.warn("effect error", spec.effect, e); }
     ctx.restore();
     this.renderer.upload(src.tex, src.canvas);
     return true;
