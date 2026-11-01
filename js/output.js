@@ -1,6 +1,7 @@
 import { Scene } from "./scene.js";
 import { migrate, CHANNEL } from "./state.js";
 import { drawOutlines, drawTestPattern, drawHandles, drawGuides, fullView, project } from "./overlay.js";
+import { liveSpecs, liveStatus, retryLive } from "./live.js";
 
 const glc = document.getElementById("gl");
 const ov = document.getElementById("ov");
@@ -116,6 +117,25 @@ addEventListener("dblclick", (e) => {
 });
 document.addEventListener("fullscreenchange", () => { hint.classList.add("hide"); sendInfo(); });
 audioBtn.addEventListener("click", () => scene.enableAudio());
+
+// Live video: screen capture needs one click in this window; camera errors are shown here too.
+const liveBox = document.getElementById("liveBox"), liveText = document.getElementById("liveText"), liveBtn = document.getElementById("liveBtn");
+let liveNeed = null;
+setInterval(() => {
+  liveNeed = null;
+  for (const spec of liveSpecs(state).values()) {
+    const st = liveStatus(spec);
+    if (["needs-click", "error", "ended", "unsupported"].includes(st.status)) { liveNeed = { spec, st }; break; }
+  }
+  liveBox.hidden = !liveNeed;
+  if (!liveNeed) return;
+  const screen = liveNeed.spec.kind === "screen";
+  liveText.textContent = liveNeed.st.status === "unsupported" ? liveNeed.st.error
+    : screen ? `${liveNeed.st.error ? liveNeed.st.error + ". " : ""}This show uses a live window.` : liveNeed.st.error || "The camera stream stopped.";
+  liveBtn.textContent = screen ? "Start live window" : "Retry camera";
+  liveBtn.hidden = liveNeed.st.status === "unsupported";
+}, 500);
+liveBtn.addEventListener("click", () => { if (liveNeed) retryLive(liveNeed.spec); });
 
 let idle = null;
 addEventListener("mousemove", () => {

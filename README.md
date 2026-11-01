@@ -67,6 +67,36 @@ Click **Remote** in the top bar for the address (it uses your LAN IP). Open it
 on a phone on the same Wi‑Fi for big SCARE / BLACKOUT buttons, outlines and
 **Next scene**.
 
+## Live video (stream from a phone or another computer)
+
+In the inspector's **Content** tab, pick **Live** to put a live feed on a
+surface:
+
+- **Camera or capture device**: webcams, HDMI capture dongles, OBS Virtual
+  Camera, or a phone set up as a webcam. On Windows 11, an Android phone can
+  be a webcam via Settings › Bluetooth & devices › Mobile devices. Phone
+  webcam apps work too.
+- **Window capture**: any window on this computer. To show a phone's or
+  another PC's screen, let them cast to this computer first. On Windows, go
+  to Settings › System › Projecting to this PC › Optional features, add
+  **Wireless Display**, turn projecting on, and open the Wireless Display app.
+  Then cast from Android (Cast / Smart View / Screen mirroring) or from
+  another Windows PC (Win+K), and pick that window here. iPhones can't cast to
+  Windows; use an AirPlay receiver app on the PC and capture its window
+  instead.
+
+Notes:
+
+- Browsers only allow cameras and screen capture on secure origins, so open
+  the editor at **http://localhost:8787** on the projector computer (not its
+  LAN address).
+- Each window captures on its own. Cameras start automatically. Window
+  capture needs one click in each window: the editor shows a notice, and the
+  projector window shows a **Start live window** button. Repeat after
+  reloading.
+- Cameras are remembered by name, so the projector window finds the same one
+  even though browsers give it a different id there.
+
 ## Christmas
 
 Effects: Snowfall, String lights, Candy cane stripes, Wrapped present,
@@ -76,9 +106,9 @@ and Christmas tree (plus Fire, Candle flicker and Text message).
 - **Christmas starter** puts candy canes on tall columns, icicles on roof
   lines, string lights on other long strips, northern lights or the sleigh on
   big areas, and trees, snow, ornaments and presents in windows.
-- **Snowfall** with a transparent background stacks over any other surface.
-  Add a surface, click **Fill output** in Position, and put it on top of the
-  list for snow over the whole house.
+- **Snowfall** stacks over any other surface. Add a surface, click **Fill
+  output** in Position, and put it on top of the list for snow over the whole
+  house.
 - **String lights** has palettes (classic, warm white, red & green, blue &
   white, rainbow) and twinkle, chase, fade or steady patterns.
 - **Candy cane stripes** shades like a round pillar by default; switch
@@ -113,9 +143,12 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - **Soft edge** feathers a surface's borders so it blends into darkness.
 - **Crop** shows only part of a video/image on a surface; duplicate a surface and
   crop differently to split one video across several objects.
-- **Blend: Add** makes glows (eyes, fire, candle) composite nicely over other layers.
-- Transparent-background effects (fog, eyes, blood, rain, spiders) can be stacked
-  on top of a video surface for layered looks.
+- **Layering:** black means "no light", so wherever a surface is black the
+  surfaces under it show through (dim areas are partly see-through, bright
+  areas cover). Snow, eyes, fog, sparkles and lights stack over anything. To
+  use a black surface as a mask that hides what's below, set **Look › Black
+  areas** to **Solid**.
+- **Blend: Glow** adds light, for extra-bright eyes, fire and candles over other layers.
 - Looping video formats that work everywhere: MP4 (H.264) or WebM.
 
 ## Files
@@ -129,4 +162,5 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `js/effects.js` – built-in effects and theme tags. Add your own by adding an entry to `EFFECTS`.
 - `js/effects-christmas.js`, `js/fx-util.js` – the Christmas pack and helpers shared by effect packs.
 - `js/editor/scenes.js` – scenes and the Christmas/Halloween starters.
+- `js/live.js` – live video sources (cameras, capture devices, window capture).
 - `media/` – your videos/images. `projects/` – saved projects.

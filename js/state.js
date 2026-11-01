@@ -34,6 +34,7 @@ export function newSurface(index = 0) {
     corners: [[0.3 + o, 0.3 + o], [0.7 + o, 0.3 + o], [0.7 + o, 0.7 + o], [0.3 + o, 0.7 + o]],
     opacity: 1,
     blend: "normal",
+    keyBlack: true, // black areas let surfaces underneath show through
     feather: 0,
     flipH: false,
     flipV: false,

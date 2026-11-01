@@ -16,6 +16,9 @@
   body.wall #ov { pointer-events: auto; cursor: crosshair; }
   #wall { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); color: #04160e; background: #34d399; padding: 6px 12px; border-radius: 8px; font: 600 13px system-ui, sans-serif; pointer-events: none; }
   #wall[hidden] { display: none; }
+  #liveBox { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 12px; background: rgba(20,20,26,.92); border: 1px solid #444; color: #eee; font: 15px system-ui, sans-serif; }
+  #liveBox[hidden] { display: none; }
+  #liveBox button { font: 600 15px system-ui, sans-serif; padding: 10px 16px; border: 0; border-radius: 8px; background: #ff8a1f; color: #1a0d00; cursor: pointer; }
   #audio { position: absolute; right: 12px; bottom: 12px; color: #fff; background: #b02020; padding: 10px 14px; border-radius: 8px; font: 14px system-ui, sans-serif; cursor: pointer; display: none; }
 </style>
 </head>
@@ -28,6 +31,7 @@
   <span id="conn">Waiting for the editor window…</span>
 </div>
 <div id="wall" hidden>Editing on wall · drag handles here · arrows nudge · W warp · Esc deselect</div>
+<div id="liveBox" hidden><span id="liveText"></span><button id="liveBtn">Start live window</button></div>
 <div id="audio">🔊 Click to enable sound</div>
 <script type="module" src="js/output.js"></script>
 </body>

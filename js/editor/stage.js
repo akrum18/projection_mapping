@@ -7,6 +7,7 @@ import { bbox, toPx, angleOf } from "../geometry.js";
 import { specThumb, specLabel } from "../thumbs.js";
 import { app, bc, sel, on, emit, outputAlive, addSurface, duplicateSurface, deleteSurface, toggleLock, setMode, select, commit } from "./store.js";
 import * as I from "./interact.js";
+import { liveSpecs, liveStatus, retryLive } from "../live.js";
 
 const $ = (id) => document.getElementById(id);
 const stageEl = $("stage"), glc = $("gl"), ov = $("ov"), octx = ov.getContext("2d");
@@ -168,6 +169,23 @@ function updateFloating() {
     const ft = `${s.name}  ${Math.round(pb.w)}×${Math.round(pb.h)}`;
     if ($("fsSel").textContent !== ft) $("fsSel").textContent = ft;
   } else { ro.hidden = true; $("fsSel").textContent = "No selection"; }
+  // live sources that need a click (screen capture) or failed in this preview
+  let need = null;
+  for (const spec of liveSpecs(app.state).values()) {
+    const st = liveStatus(spec);
+    if (["needs-click", "error", "ended", "unsupported"].includes(st.status)) { need = { spec, st }; break; }
+  }
+  $("liveNote").hidden = !need;
+  if (need) {
+    const screen = need.spec.kind === "screen";
+    const txt = need.st.status === "unsupported" ? need.st.error
+      : screen ? `${need.st.error ? need.st.error + ". " : ""}A surface shows a live window: click Start and pick the window to stream.`
+      : need.st.error || "The camera stream stopped.";
+    if ($("liveNoteText").textContent !== txt) $("liveNoteText").textContent = txt;
+    $("liveNoteBtn").textContent = screen ? "Start" : "Retry";
+    $("liveNoteBtn").hidden = need.st.status === "unsupported";
+    liveNeed = need.spec;
+  }
   // first-run checklist
   const empty = app.state.surfaces.length === 0;
   $("firstRun").hidden = !empty;
@@ -179,6 +197,8 @@ function updateFloating() {
   }
 }
 $("frAdd").addEventListener("click", () => addSurface());
+let liveNeed = null;
+$("liveNoteBtn").addEventListener("click", () => { if (liveNeed) retryLive(liveNeed); });
 $("frOpenOutput").addEventListener("click", () => emit("openOutput"));
 
 // ---------------- render loop ----------------
