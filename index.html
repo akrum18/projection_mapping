@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Projector Mapper</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">🎃 Projector Mapper</div>
+  <button id="btnOutput" class="primary">Open output window</button>
+  <span id="outStatus" class="status">output: not open</span>
+  <div class="spacer"></div>
+  <button id="btnScare" class="danger" title="Space">SCARE!</button>
+  <button id="btnBlackout" class="toggle" title="B">Blackout</button>
+  <button id="btnOutlines" class="toggle" title="O">Outlines on output</button>
+  <button id="btnTest" class="toggle" title="T">Test pattern</button>
+  <label class="inline">Master <input type="range" id="master" min="0" max="1.5" step="0.01" value="1"></label>
+</header>
+<main>
+  <aside class="panel left">
+    <h2>Surfaces <button id="btnAdd" class="small">+ Add</button></h2>
+    <ul id="surfaceList" class="list"></ul>
+    <h2>Project</h2>
+    <div class="row"><input id="projName" placeholder="project name"><button id="btnSave" class="small">Save</button></div>
+    <div class="row"><select id="projList"></select><button id="btnLoad" class="small">Load</button></div>
+    <div class="row"><button id="btnExport" class="small">Export JSON</button><button id="btnImport" class="small">Import JSON</button><button id="btnNew" class="small">New</button></div>
+    <input type="file" id="importFile" hidden accept=".json">
+    <h2>Media <button id="btnRefreshMedia" class="small" title="Refresh">↻</button></h2>
+    <p class="hint">Drop videos or images anywhere on this page to upload them into the <code>media/</code> folder. Click one to assign it to the selected surface.</p>
+    <ul id="mediaList" class="list"></ul>
+    <h2>Remote</h2>
+    <p class="hint" id="remoteHint">Open <code>remote.html</code> on your phone (same Wi‑Fi) for a big SCARE button.</p>
+  </aside>
+  <section class="stage">
+    <div id="previewWrap"><canvas id="gl"></canvas><canvas id="ov"></canvas></div>
+    <div class="stagebar">Drag corners to warp · drag inside a surface to move it · arrow keys nudge (Shift = ×10) · 1–9 select · Del delete · Ctrl+Z undo · Space scare · B blackout · O outlines · T test pattern</div>
+  </section>
+  <aside class="panel right" id="props"><p class="hint">Add a surface to get started.</p></aside>
+</main>
+<div id="dropHint">Drop files to upload to media/</div>
+<div id="toast"></div>
+<script type="module" src="js/editor.js"></script>
+</body>
+</html>

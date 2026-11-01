@@ -1,0 +1,4 @@
+media/*
+!media/.gitkeep
+projects/*
+!projects/.gitkeep

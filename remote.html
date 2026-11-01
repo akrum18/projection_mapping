@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scare Remote</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0b10; color: #eee; font-family: system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; gap: 14px; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); box-sizing: border-box; }
+  h1 { font-size: 18px; margin: 4px 0 0; color: #ff8800; text-align: center; }
+  button { flex: 1; font-size: 28px; font-weight: 800; border: 0; border-radius: 18px; color: #fff; letter-spacing: .04em; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+  button:active { filter: brightness(1.4); transform: scale(.98); }
+  #scare { background: #c0141a; flex: 3; font-size: 44px; box-shadow: 0 0 40px rgba(255,0,0,.35); }
+  #blackout { background: #2b2b36; }
+  #outlines { background: #1f3a33; flex: .7; font-size: 20px; }
+  #status { text-align: center; color: #888; font-size: 13px; min-height: 1.2em; }
+</style>
+</head>
+<body>
+<h1>🎃 Scare Remote</h1>
+<button id="scare">SCARE!</button>
+<button id="blackout">BLACKOUT</button>
+<button id="outlines">Toggle outlines</button>
+<div id="status"></div>
+<script>
+  const status = document.getElementById('status');
+  async function send(cmd) {
+    try { navigator.vibrate?.(40); } catch (e) {}
+    try {
+      const r = await fetch('/api/remote', { method: 'POST', body: JSON.stringify({ cmd }), headers: { 'Content-Type': 'application/json' } });
+      status.textContent = r.ok ? `sent "${cmd}" ${new Date().toLocaleTimeString()}` : 'server error';
+    } catch (e) { status.textContent = 'could not reach server'; }
+  }
+  for (const id of ['scare', 'blackout', 'outlines']) {
+    const b = document.getElementById(id);
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); send(id); });
+  }
+</script>
+</body>
+</html>
