@@ -2,7 +2,7 @@
 // each surface remembers its content and scare per scene in `looks`.
 import { app, commit, emit, toast, undo } from "./store.js";
 import { cloneState, uid } from "../state.js";
-import { defaultParams } from "../effects.js";
+import { themedParams } from "../effects.js";
 import { bbox, toPx } from "../geometry.js";
 
 const look = (sf) => ({ content: cloneState(sf.content), scare: cloneState(sf.scare) });
@@ -37,8 +37,8 @@ export function nextScene() {
 
 // Pick a sensible starter effect from each surface's shape and position.
 const STARTERS = {
-  christmas: { tall: "candycane", roof: "icicles", wide: "lights", big: ["aurora", "sleigh"], other: ["xmastree", "snow", "ornaments", "gift", "stars"] },
-  halloween: { tall: "candle", roof: "blood", wide: "fog", big: ["lightning", "portal"], other: ["eyes", "silhouette", "ghost", "spiders", "fire"] },
+  christmas: { tall: "candycane", roof: "icicles", wide: "lights", big: ["village", "fireplace", "aurora", "sleigh"], other: ["xmastree", "santawindow", "snowman", "wreath", "snowglobe", "ornaments", "gift", "snow"] },
+  halloween: { tall: "candle", roof: "blood", wide: "fog", big: ["fireplace", "lightning", "portal"], other: ["eyes", "silhouette", "ghost", "spiders", "fire"] },
 };
 function starterLooks(kind) {
   const S = STARTERS[kind], out = app.state.output, n = { big: 0, other: 0 };
@@ -51,7 +51,7 @@ function starterLooks(kind) {
     else if (area > 0.2) fx = S.big[n.big++ % S.big.length];
     else fx = S.other[n.other++ % S.other.length];
     return {
-      content: { type: "effect", effect: fx, params: defaultParams(fx) },
+      content: { type: "effect", effect: fx, params: themedParams(fx, kind) },
       scare: kind === "halloween" ? cloneState(sf.scare) : { type: "none", duration: 4 },
     };
   });

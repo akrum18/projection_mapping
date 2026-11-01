@@ -125,15 +125,45 @@ Notes:
 - Cameras are remembered by name, so the projector window finds the same one
   even though browsers give it a different id there.
 
+## Fireplace (Halloween and Christmas)
+
+A detailed hearth for a wall, garage door or chimney breast: simulated
+flames that lick and flicker, glowing logs and embers, rising sparks, and
+firelight that flickers across the surround.
+
+- **Decorations:** Christmas (stockings, garland with twinkling lights, a
+  wreath, candles, presents), Halloween (a jack-o'-lantern, a skull, drippy
+  candles, cobwebs and a dangling spider), or plain.
+- **Flame colour:** warm, ghostly green, witch purple or blue.
+- **Surround:** red brick, grey stone or dark stone. Fire size, flame height
+  and sparks are adjustable.
+- Picked from the Halloween filter or the Halloween starter, it starts out
+  haunted (green flames, dark stone).
+
 ## Christmas
 
-Effects: Snowfall, String lights, Candy cane stripes, Wrapped present,
-Icicles, Northern lights, Santa's sleigh, Hanging ornaments, Twinkling stars
-and Christmas tree (plus Fire, Candle flicker and Text message).
+Effects: Fireplace, Door wreath, Snowman, Winter village, Santa at the
+window, Snow globe, Snowfall, String lights, Candy cane stripes, Wrapped
+present, Icicles, Northern lights, Santa's sleigh, Hanging ornaments,
+Twinkling stars and Christmas tree (plus Fire, Candle flicker and Text
+message).
 
+- **Door wreath:** layered evergreen with pine cones, holly, berries, a velvet
+  bow and woven twinkle lights. Made for front doors.
+- **Snowman:** top hat, fluttering striped scarf, a waving arm, blinking eyes
+  and falling snow.
+- **Winter village:** for big walls. Snowy hills, cottages and a church whose
+  windows light up and go dark over the evening, chimney smoke, a moon and
+  snowfall.
+- **Santa at the window:** a warm room with a twinkling tree, curtains, frosted
+  panes and a snowy sill. Every few seconds Santa walks past with his sack,
+  stops and waves.
+- **Snow globe:** a tree, a village or a snowman inside. It's shaken every few
+  seconds, and the snow swirls up and settles.
 - **Christmas starter** puts candy canes on tall columns, icicles on roof
-  lines, string lights on other long strips, northern lights or the sleigh on
-  big areas, and trees, snow, ornaments and presents in windows.
+  lines, string lights on other long strips, the village, fireplace, northern
+  lights or sleigh on big areas, and trees, Santa at the window, snowmen,
+  wreaths, snow globes, ornaments and presents in windows.
 - **Snowfall** stacks over any other surface. Add a surface, click **Fill
   output** in Position, and put it on top of the list for snow over the whole
   house.
@@ -189,7 +219,7 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `output.html`, `js/output.js` – projector output window.
 - `js/scene.js`, `js/renderer.js` – WebGL homography renderer and media/effect sources.
 - `js/effects.js` – built-in effects and theme tags. Add your own by adding an entry to `EFFECTS`.
-- `js/effects-christmas.js`, `js/fx-util.js` – the Christmas pack and helpers shared by effect packs.
+- `js/effects-christmas.js`, `js/effects-fireplace.js`, `js/fx-util.js` – the Christmas pack, the fireplace, and helpers shared by effect packs.
 - `js/editor/scenes.js` – scenes and the Christmas/Halloween starters.
 - `js/live.js` – live video sources (cameras, capture devices, window capture).
 - `media/` – your videos/images. `projects/` – saved projects.
