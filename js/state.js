@@ -17,6 +17,9 @@ export function defaultState() {
     brightness: 1,
     // Editor-only tracing photo of the real object (never shown on the projector).
     reference: { url: "", opacity: 0.4, show: false },
+    // Scenes share surfaces and alignment; each surface keeps its content/scare per scene in `looks`.
+    scenes: [{ id: "main", name: "Main" }],
+    scene: "main",
     surfaces: [],
   };
 }
@@ -42,6 +45,7 @@ export function newSurface(index = 0) {
     muted: true,
     volume: 1,
     speed: 1,
+    looks: {},
   };
 }
 
@@ -51,6 +55,8 @@ export function migrate(state) {
   const s = { ...d, ...(state || {}) };
   s.output = { ...d.output, ...(s.output || {}) };
   s.reference = { ...d.reference, ...(s.reference || {}) };
+  if (!Array.isArray(s.scenes) || !s.scenes.length) s.scenes = d.scenes.map((x) => ({ ...x }));
+  if (!s.scenes.find((x) => x.id === s.scene)) s.scene = s.scenes[0].id;
   s.surfaces = (s.surfaces || []).map((sf, i) => {
     const n = newSurface(i);
     const out = { ...n, ...sf };
@@ -58,6 +64,7 @@ export function migrate(state) {
     out.scare = { ...n.scare, ...(sf.scare || {}) };
     if (!Array.isArray(out.corners) || out.corners.length !== 4) out.corners = n.corners;
     if (!Array.isArray(out.crop) || out.crop.length !== 4) out.crop = [0, 0, 1, 1];
+    if (!out.looks || typeof out.looks !== "object") out.looks = {};
     return out;
   });
   return s;

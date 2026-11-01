@@ -13,6 +13,9 @@
   #scare { background: #c0141a; flex: 3; font-size: 44px; box-shadow: 0 0 40px rgba(255,0,0,.35); }
   #blackout { background: #2b2b36; }
   #outlines { background: #1f3a33; flex: .7; font-size: 20px; }
+  #nextScene { background: #1d3157; flex: .7; font-size: 20px; }
+  .row { display: flex; gap: 14px; flex: .7; }
+  .row button { flex: 1; }
   #status { text-align: center; color: #888; font-size: 13px; min-height: 1.2em; }
 </style>
 </head>
@@ -20,7 +23,7 @@
 <h1>🎃 Scare Remote</h1>
 <button id="scare">SCARE!</button>
 <button id="blackout">BLACKOUT</button>
-<button id="outlines">Toggle outlines</button>
+<div class="row"><button id="outlines">Outlines</button><button id="nextScene">Next scene</button></div>
 <div id="status"></div>
 <script>
   const status = document.getElementById('status');
@@ -31,7 +34,7 @@
       status.textContent = r.ok ? `sent "${cmd}" ${new Date().toLocaleTimeString()}` : 'server error';
     } catch (e) { status.textContent = 'could not reach server'; }
   }
-  for (const id of ['scare', 'blackout', 'outlines']) {
+  for (const id of ['scare', 'blackout', 'outlines', 'nextScene']) {
     const b = document.getElementById(id);
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); send(id); });
   }
