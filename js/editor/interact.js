@@ -11,6 +11,8 @@ import { handlePositions } from "../overlay.js";
 import { bbox, toPx, toNorm, translate, scaleFromHandle, rotate, snapBox, snapPoint, distToSegment } from "../geometry.js";
 
 let drag = null;
+// Fingers need bigger targets than a mouse: handles grow on touch screens.
+export const touchScale = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches ? 1.6 : 1;
 export const isDragging = () => !!drag;
 export const currentDrag = () => drag;
 
@@ -19,9 +21,9 @@ function hitHandle(pt, space) {
   if (!s || s.locked) return null;
   const cs = s.corners.map(space.toScreen);
   let best = null;
-  for (const h of handlePositions(cs, app.ui.mode, 1)) {
+  for (const h of handlePositions(cs, app.ui.mode, touchScale)) {
     const d = Math.hypot(h.x - pt[0], h.y - pt[1]);
-    const r = h.r + 4;
+    const r = h.r + 4 * touchScale;
     // corners and resize handles win over edge midpoints when they overlap
     const score = d + (h.kind === "edge" ? 3 : 0);
     if (d <= r && (!best || score < best.score)) best = { ...h, score };
@@ -38,7 +40,7 @@ export function hitSurface(pt, space) {
   for (let i = list.length - 1; i >= 0; i--) if (pointInQuad(n, list[i].corners)) return list[i];
   for (let i = list.length - 1; i >= 0; i--) {
     const cs = list[i].corners.map(space.toScreen);
-    for (let k = 0; k < 4; k++) if (distToSegment(pt, cs[k], cs[(k + 1) % 4]) < 6) return list[i];
+    for (let k = 0; k < 4; k++) if (distToSegment(pt, cs[k], cs[(k + 1) % 4]) < 6 * touchScale) return list[i];
   }
   return null;
 }

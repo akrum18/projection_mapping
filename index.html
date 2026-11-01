@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Projector Mapper</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/style.css">
@@ -38,6 +38,8 @@
     <symbol id="i-projector" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="2"/><circle cx="16" cy="12" r="2.5"/><path d="M6 17v2M18 17v2"/></symbol>
     <symbol id="i-hand" viewBox="0 0 24 24"><path d="M12 2v8M8 4v7M16 4v7M4 9v5a8 8 0 0 0 16 0V8"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m14 6 4 4"/></symbol>
     <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
   </defs>
 </svg>
@@ -45,7 +47,7 @@
 <header class="topbar">
   <div class="brand">
     <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c5 0 9 3 9 8s-4 7-9 7-9-2-9-7 4-8 9-8z" fill="#ff8a1f"/><path d="M12 6c0-2 1-3 3-4" stroke="#7bbf5a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M8 12l2 2M16 12l-2 2M9 17h6" stroke="#1a0d00" stroke-width="1.8" stroke-linecap="round"/></svg>
-    <span>Projector Mapper</span>
+    <span class="lbl">Projector Mapper</span>
   </div>
   <span class="vsep"></span>
   <div class="menu-wrap">
@@ -76,9 +78,9 @@
       <div id="outList" class="mlist"></div>
     </div>
   </div>
-  <button id="btnWall" class="btn" aria-pressed="false" title="Show handles on the projector and drag them there, while looking at the real object"><svg class="i"><use href="#i-hand"/></svg>Edit on wall</button>
+  <button id="btnWall" class="btn" aria-pressed="false" title="Show handles on the projector and drag them there, while looking at the real object"><svg class="i"><use href="#i-hand"/></svg><span class="lbl">Edit on wall</span></button>
   <div class="menu-wrap">
-    <button id="btnRemote" class="btn" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-phone"/></svg>Remote</button>
+    <button id="btnRemote" class="btn" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-phone"/></svg><span class="lbl">Remote</span></button>
     <div id="remoteMenu" class="popover right" hidden>
       <div class="ptitle">Phone remote</div>
       <p class="dim">On a phone on the same Wi‑Fi, open:</p>
@@ -87,7 +89,7 @@
     </div>
   </div>
   <button id="btnHelp" class="icon" aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?"><b>?</b></button>
-  <button id="btnFull" class="btn" title="Fullscreen editing · F"><svg class="i"><use href="#i-max"/></svg>Fullscreen<kbd>F</kbd></button>
+  <button id="btnFull" class="btn" title="Fullscreen editing · F"><svg class="i"><use href="#i-max"/></svg><span class="lbl">Fullscreen</span><kbd>F</kbd></button>
 </header>
 
 <main>
@@ -103,8 +105,8 @@
 
     <div id="ctxbar" class="ctxbar" hidden>
       <div class="seg">
-        <button data-mode="transform" title="Move, resize and rotate"><svg class="i"><use href="#i-resize"/></svg>Resize</button>
-        <button data-mode="warp" title="Corner-pin warp · W"><svg class="i"><use href="#i-warp"/></svg>Warp</button>
+        <button data-mode="transform" title="Move, resize and rotate" aria-label="Resize"><svg class="i"><use href="#i-resize"/></svg><span class="lbl">Resize</span></button>
+        <button data-mode="warp" title="Corner-pin warp · W" aria-label="Warp"><svg class="i"><use href="#i-warp"/></svg><span class="lbl">Warp</span></button>
       </div>
       <span class="vsep"></span>
       <button id="ctxContent" class="ghost" title="Change what this surface shows"><span id="ctxThumb" class="thumb"></span><span id="ctxLabel"></span><svg class="i sm"><use href="#i-chev"/></svg></button>
@@ -130,9 +132,9 @@
       <button id="zoomLabel" class="ghost mono" title="Fit to window · 0">Fit</button>
       <button id="zoomIn" class="icon" aria-label="Zoom in" title="Zoom in · +"><svg class="i"><use href="#i-plus"/></svg></button>
       <span class="vsep"></span>
-      <button id="btnSnap" class="btn sm on" aria-pressed="true" title="Snap to edges, centres and other surfaces (hold Ctrl/⌘ while dragging to ignore)"><svg class="i sm"><use href="#i-magnet"/></svg>Snap</button>
+      <button id="btnSnap" class="btn sm on" aria-pressed="true" title="Snap to edges, centres and other surfaces (hold Ctrl/⌘ while dragging to ignore)"><svg class="i sm"><use href="#i-magnet"/></svg><span class="lbl">Snap</span></button>
       <div class="menu-wrap">
-        <button id="btnRef" class="btn sm" aria-haspopup="true" aria-expanded="false" title="Trace over a photo of the real object"><svg class="i sm"><use href="#i-image"/></svg>House photo</button>
+        <button id="btnRef" class="btn sm" aria-haspopup="true" aria-expanded="false" title="Trace over a photo of the real object"><svg class="i sm"><use href="#i-image"/></svg><span class="lbl">House photo</span></button>
         <div id="refMenu" class="popover up" hidden>
           <div class="ptitle">Tracing photo</div>
           <p class="dim small">A photo of the house shown dimmed on this stage only, never on the projector. Take it from where the projector stands.</p>
@@ -166,15 +168,21 @@
   <aside class="panel right" id="inspector" aria-label="Inspector"></aside>
 </main>
 
+<nav class="mobnav" aria-label="Panels">
+  <button id="mobLayers" class="mobtab" aria-pressed="false"><svg class="i"><use href="#i-layers"/></svg>Surfaces</button>
+  <button id="mobStage" class="mobtab" aria-pressed="true"><svg class="i"><use href="#i-projector"/></svg>Stage</button>
+  <button id="mobEdit" class="mobtab" aria-pressed="false"><svg class="i"><use href="#i-edit"/></svg>Edit</button>
+</nav>
+
 <footer class="showbar">
   <span class="showlabel">SHOW</span>
   <button id="btnScare" class="scare" title="Fire every surface's scare / show moment · Space"><svg class="i"><use href="#i-zap"/></svg><span id="scareLabel">SCARE</span><kbd>Space</kbd></button>
   <button id="btnAuto" class="btn tall" title="Run the show automatically every few minutes"><span id="autoLabel">Auto: off</span></button>
-  <button id="btnBlackout" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-black"/></svg>Blackout<kbd>B</kbd></button>
-  <button id="btnOutlines" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-outline"/></svg>Outlines on wall<kbd>O</kbd></button>
-  <button id="btnTest" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-grid"/></svg>Test pattern<kbd>T</kbd></button>
+  <button id="btnBlackout" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-black"/></svg><span class="lbl">Blackout</span><kbd>B</kbd></button>
+  <button id="btnOutlines" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-outline"/></svg><span class="lbl">Outlines on wall</span><kbd>O</kbd></button>
+  <button id="btnTest" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-grid"/></svg><span class="lbl">Test pattern</span><kbd>T</kbd></button>
   <span class="vsep tall"></span>
-  <span class="showlabel">SCENE</span>
+  <span class="showlabel lbl">SCENE</span>
   <div id="sceneTabs" class="scenetabs" role="group" aria-label="Scenes"></div>
   <div class="menu-wrap">
     <button id="btnScene" class="icon tall" aria-label="Scene options and new scene" title="Rename, delete or add scenes" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-plus"/></svg></button>
@@ -191,7 +199,7 @@
   </div>
   <div class="spacer"></div>
   <svg class="i dim" aria-hidden="true"><use href="#i-sun"/></svg>
-  <label for="master" class="dim">Master</label>
+  <label for="master" class="dim lbl">Master</label>
   <input type="range" id="master" min="0" max="1.5" step="0.01" value="1">
   <span id="masterVal" class="mono dim small">100%</span>
 </footer>

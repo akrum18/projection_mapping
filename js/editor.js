@@ -200,6 +200,23 @@ document.addEventListener("fullscreenchange", () => { if (!document.fullscreenEl
 addEventListener("mousemove", (e) => { if (app.ui.focus) poke(e.clientY < 90); });
 on("openTab", () => { if (app.ui.focus) exitFocus(); });
 
+// ---------------- phone layout: Surfaces and Edit as bottom sheets ----------------
+const isPhone = () => matchMedia("(max-width: 820px)").matches;
+const sheetNow = () => (document.body.classList.contains("sheet-layers") ? "layers" : document.body.classList.contains("sheet-edit") ? "edit" : null);
+function setSheet(name) {
+  const b = document.body;
+  b.classList.toggle("sheet-layers", name === "layers");
+  b.classList.toggle("sheet-edit", name === "edit");
+  b.classList.toggle("sheet-open", !!name);
+  $("mobLayers").setAttribute("aria-pressed", String(name === "layers"));
+  $("mobEdit").setAttribute("aria-pressed", String(name === "edit"));
+  $("mobStage").setAttribute("aria-pressed", String(!name));
+}
+$("mobLayers").addEventListener("click", () => setSheet(sheetNow() === "layers" ? null : "layers"));
+$("mobEdit").addEventListener("click", () => setSheet(sheetNow() === "edit" ? null : "edit"));
+$("mobStage").addEventListener("click", () => setSheet(null));
+on("openTab", () => { if (isPhone()) setSheet("edit"); });
+
 // ---------------- help ----------------
 const openHelp = () => { closePops(); $("helpModal").hidden = false; $("helpClose").focus(); };
 $("btnHelp").addEventListener("click", openHelp);

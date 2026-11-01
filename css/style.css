@@ -235,3 +235,68 @@ body.focus #toast { top: 68px; }
   #btnWall, #btnRemote { padding: 0 8px; }
   .brand span { display: none; }
 }
+
+/* ---------------------------------------------------------------- phones & small tablets
+   The stage gets the full width; Surfaces and Edit become bottom sheets opened from a
+   tab bar; the top bar and show bar shrink to icons; popovers pin to the screen. */
+.mobnav { display: none; }
+@media (max-width: 820px) {
+  :root { --nav-h: 52px; --show-h: 60px; --sheet-h: min(48vh, 420px); }
+  html, body { height: 100%; }
+  body { height: 100vh; height: 100dvh; }
+  .lbl, .topbar kbd, .showbar kbd, #saveStatus { display: none !important; }
+
+  .topbar { height: 48px; gap: 2px; padding: 0 6px; overflow-x: auto; scrollbar-width: none; }
+  .topbar::-webkit-scrollbar { display: none; }
+  .topbar .vsep { display: none; }
+  .topbar .btn { padding: 0 9px; }
+  #projTitle { max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+  #outStatus { display: none; }
+  #btnRedo { display: none; }
+
+  main { position: relative; transition: padding-bottom .2s; }
+  body.sheet-open main { padding-bottom: var(--sheet-h); }
+  .panel.left, .panel.right {
+    position: fixed; left: 0; right: 0; width: auto; z-index: 30;
+    bottom: calc(var(--nav-h) + var(--show-h) + env(safe-area-inset-bottom));
+    height: var(--sheet-h); border: 0; border-top: 1px solid var(--line2); border-radius: 14px 14px 0 0;
+    box-shadow: 0 -12px 30px rgba(0,0,0,.5);
+    transform: translateY(calc(100% + var(--nav-h) + var(--show-h) + 40px)); transition: transform .22s ease;
+  }
+  body.sheet-layers .panel.left, body.sheet-edit .panel.right { transform: none; }
+  .panel.left .hint { display: none; }
+
+  .mobnav { display: flex; height: var(--nav-h); flex: none; background: var(--panel); border-top: 1px solid var(--line); z-index: 31; }
+  .mobtab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 0; background: transparent; color: var(--dim); font-size: 11px; font-weight: 500; }
+  .mobtab[aria-pressed="true"] { color: var(--accent); }
+
+  .showbar { height: calc(var(--show-h) + env(safe-area-inset-bottom)); padding: 0 8px env(safe-area-inset-bottom); gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .showbar::-webkit-scrollbar { display: none; }
+  .showbar .btn.tall { height: 44px; padding: 0 11px; }
+  .showbar .vsep.tall { margin: 0 2px; }
+  .scare { height: 44px; padding: 0 16px; font-size: 16px; flex: none; }
+  #btnAuto { flex: none; }
+  .scenetabs { max-width: none; flex: none; }
+  #master { width: 90px; flex: none; }
+  #masterVal { display: none; }
+  .showlabel:not(.lbl) { display: none; }
+
+  .stagectl { left: 8px; bottom: 8px; }
+  .readout { display: none !important; }
+  .ctxbar { max-width: calc(100% - 16px); overflow-x: auto; }
+  .ctxbar .seg button { padding: 0 9px; }
+  #ctxLabel { display: none; }
+  body.sheet-open .stagectl, body.sheet-open .ctxbar { display: none !important; }
+
+  /* popovers pin to the screen instead of hanging off a button */
+  .popover { position: fixed; left: 8px !important; right: 8px !important; top: 54px; bottom: auto; min-width: 0; width: auto !important; max-height: calc(100dvh - 140px); overflow-y: auto; }
+  .popover.up { top: auto; bottom: calc(var(--nav-h) + var(--show-h) + 8px); }
+
+  body.focus .fspill { flex-wrap: wrap; justify-content: center; max-width: calc(100% - 16px); }
+  body.focus .fssel { display: none; }
+  body.focus .fshint { display: none; }
+  body.focus .mobnav { display: none; }
+  #toast { top: 56px; max-width: calc(100% - 24px); }
+  .frcard { padding: 16px; }
+  .icon { width: 40px; height: 40px; }
+}

@@ -20,7 +20,7 @@ let pan = null;
 
 function layout() {
   size = { w: stageEl.clientWidth, h: stageEl.clientHeight };
-  const m = app.ui.focus ? 0 : 32;
+  const m = app.ui.focus ? 0 : size.w < 600 ? 10 : 32; // phones: use the narrow width
   const ar = app.state.output.w / app.state.output.h;
   let bw = Math.max(2, size.w - m * 2), bh = bw / ar;
   if (bh > size.h - m * 2) { bh = Math.max(2, size.h - m * 2); bw = bh * ar; }
@@ -55,9 +55,21 @@ $("zoomLabel").addEventListener("click", fit);
 const local = (e) => { const r = stageEl.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 const mods = (e) => ({ shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey });
 
+// two fingers: pinch to zoom, move to pan
+const touches = new Map();
+let pinch = null;
+const pinchState = () => { const [a, b] = [...touches.values()]; return { d: Math.max(1, Math.hypot(a[0] - b[0], a[1] - b[1])), mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] }; };
 ov.addEventListener("pointerdown", (e) => {
   ov.focus({ preventScroll: true });
   const p = local(e);
+  touches.set(e.pointerId, p);
+  if (touches.size === 2) {
+    I.pointerUp(); pan = null;
+    try { ov.setPointerCapture(e.pointerId); } catch (err) {}
+    const ps = pinchState(); pinch = { d: ps.d, z: view.zoom, mid: ps.mid };
+    return;
+  }
+  if (touches.size > 2) return;
   try { ov.setPointerCapture(e.pointerId); } catch (err) {}
   if (e.button === 1 || e.button === 2) { pan = { start: p, x: view.panX, y: view.panY }; e.preventDefault(); return; }
   if (e.button !== 0) return;
@@ -66,6 +78,14 @@ ov.addEventListener("pointerdown", (e) => {
 });
 ov.addEventListener("pointermove", (e) => {
   const p = local(e);
+  if (touches.has(e.pointerId)) touches.set(e.pointerId, p);
+  if (pinch && touches.size >= 2) {
+    const ps = pinchState();
+    setZoom(pinch.z * (ps.d / pinch.d), ps.mid[0], ps.mid[1]);
+    view.panX += ps.mid[0] - pinch.mid[0]; view.panY += ps.mid[1] - pinch.mid[1];
+    pinch.mid = ps.mid; layout(); updateZoomLabel();
+    return;
+  }
   if (pan) {
     view.panX = pan.x + p[0] - pan.start[0]; view.panY = pan.y + p[1] - pan.start[1];
     if (Math.hypot(p[0] - pan.start[0], p[1] - pan.start[1]) > 3) pan.moved = true;
@@ -74,7 +94,11 @@ ov.addEventListener("pointermove", (e) => {
   if (I.isDragging()) { I.pointerMove(p, space, mods(e)); return; }
   ov.style.cursor = I.hoverAt(p, space);
 });
-const up = () => { pan = null; I.pointerUp(); };
+const up = (e) => {
+  touches.delete(e.pointerId);
+  if (pinch) { if (touches.size < 2) pinch = null; return; }
+  pan = null; I.pointerUp();
+};
 ov.addEventListener("pointerup", up);
 ov.addEventListener("pointercancel", up);
 ov.addEventListener("pointerleave", () => { if (!I.isDragging()) { app.ui.hover = null; app.ui.hot = null; } });
@@ -293,7 +317,7 @@ function frameLoop() {
   const s = sel();
   drawOutlines(ctx, st, v, { selected: app.ui.selected, labels: "top", unit: dpr, hover: app.ui.hover, all: !app.ui.focus });
   drawGuides(ctx, app.ui.guides, v, dpr);
-  if (s && !s.locked) drawHandles(ctx, project(s.corners, v), app.ui.mode, { unit: dpr, corner: app.ui.selCorner, hot: I.currentDrag() ? { kind: I.currentDrag().kind, arg: I.currentDrag().arg } : app.ui.hot });
+  if (s && !s.locked) drawHandles(ctx, project(s.corners, v), app.ui.mode, { unit: dpr * I.touchScale, corner: app.ui.selCorner, hot: I.currentDrag() ? { kind: I.currentDrag().kind, arg: I.currentDrag().arg } : app.ui.hot });
   const d = I.currentDrag();
   if (s && d && d.moved && d.pointer && (d.kind === "corner" || d.kind === "edge")) drawLoupe(ctx, dpr, d.pointer, s);
   updateFloating();
