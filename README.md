@@ -1,10 +1,12 @@
 # 🎃 Projector Mapper
 
-A small, dependency-free projection-mapping tool for Halloween. Runs in your
-browser from a local Python server. Map videos, images, or built-in generative
-effects (fire, lightning, glowing eyes, blood, fog, ghosts, spiders, a shadow
-figure walking past a window…) onto real objects with corner-pin perspective
-warping, then trigger jump scares from the keyboard or your phone.
+A small, dependency-free projection-mapping tool for Halloween and Christmas.
+Runs in your browser from a local Python server. Map videos, images, or
+built-in generative effects onto real objects with corner-pin perspective
+warping: fire, lightning, glowing eyes, fog, ghosts and a shadow figure for
+Halloween; snowfall, string lights, candy canes, icicles, a Christmas tree and
+Santa's sleigh for Christmas. Trigger jump scares from the keyboard or your
+phone, and keep both shows in one project as separate scenes.
 
 ## Quick start
 
@@ -41,8 +43,15 @@ python3 server.py          # prints the editor and phone-remote URLs
   double-click to rename, eye to hide, padlock to lock.
 - **Inspector** (right): Content, Look, Scare and Position tabs. Position
   takes exact projector pixels, including width, height and rotation.
-- **Show bar** (bottom): SCARE, Blackout, Outlines on wall, Test pattern and
-  Master brightness, kept apart from the editing tools.
+- **Show bar** (bottom): SCARE, Blackout, Outlines on wall, Test pattern,
+  scenes and Master brightness, kept apart from the editing tools.
+- **Scenes**: one mapped house, several shows. Surfaces and alignment are
+  shared; each scene has its own content and scares. Use **+** in the show bar
+  to add a **Christmas starter** or **Halloween starter** (picks an effect for
+  every surface from its shape), copy the current scene, or start blank. Click
+  a scene to switch the whole house.
+- **Theme chips** above the effect tiles filter them: All, Halloween,
+  Christmas, Basics.
 - **Fullscreen (F)**: hides all panels, leaving the stage and a small floating
   toolbar that fades when idle. Esc exits.
 - **Edit on wall**: with the projector window open, this draws the handles on
@@ -55,7 +64,27 @@ python3 server.py          # prints the editor and phone-remote URLs
 ## Phone remote
 
 Click **Remote** in the top bar for the address (it uses your LAN IP). Open it
-on a phone on the same Wi‑Fi for big SCARE / BLACKOUT buttons.
+on a phone on the same Wi‑Fi for big SCARE / BLACKOUT buttons, outlines and
+**Next scene**.
+
+## Christmas
+
+Effects: Snowfall, String lights, Candy cane stripes, Wrapped present,
+Icicles, Northern lights, Santa's sleigh, Hanging ornaments, Twinkling stars
+and Christmas tree (plus Fire, Candle flicker and Text message).
+
+- **Christmas starter** puts candy canes on tall columns, icicles on roof
+  lines, string lights on other long strips, northern lights or the sleigh on
+  big areas, and trees, snow, ornaments and presents in windows.
+- **Snowfall** with a transparent background stacks over any other surface.
+  Add a surface, click **Fill output** in Position, and put it on top of the
+  list for snow over the whole house.
+- **String lights** has palettes (classic, warm white, red & green, blue &
+  white, rainbow) and twinkle, chase, fade or steady patterns.
+- **Candy cane stripes** shades like a round pillar by default; switch
+  Shading to Flat for flat surfaces.
+- Text message works for "Merry Christmas" too: change the text, colour and
+  font in its settings.
 
 ## Keys (editor)
 
@@ -97,5 +126,7 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `js/geometry.js`, `js/overlay.js`, `js/thumbs.js` – shared geometry, overlay drawing, effect/media thumbnails.
 - `output.html`, `js/output.js` – projector output window.
 - `js/scene.js`, `js/renderer.js` – WebGL homography renderer and media/effect sources.
-- `js/effects.js` – built-in effects. Add your own by adding an entry to `EFFECTS`.
+- `js/effects.js` – built-in effects and theme tags. Add your own by adding an entry to `EFFECTS`.
+- `js/effects-christmas.js`, `js/fx-util.js` – the Christmas pack and helpers shared by effect packs.
+- `js/editor/scenes.js` – scenes and the Christmas/Halloween starters.
 - `media/` – your videos/images. `projects/` – saved projects.

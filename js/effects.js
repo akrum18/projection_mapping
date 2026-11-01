@@ -1,6 +1,8 @@
 // Built-in generative effects. Each effect draws into a 2D canvas that becomes
 // a WebGL texture. `draw(ctx, w, h, t, dt, p, s)`: t = seconds, dt = frame
 // delta, p = params, s = per-instance scratch state (reset on resize).
+// Extra packs (effects-christmas.js) are merged in below and tagged by theme.
+import { CHRISTMAS } from "./effects-christmas.js";
 
 const rnd = (a = 1, b = 0) => b + Math.random() * (a - b);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -411,7 +413,7 @@ export const EFFECTS = {
   },
 
   text: {
-    label: "Creepy text",
+    label: "Text message",
     params: {
       text: { type: "text", default: "ENTER IF YOU DARE", label: "Text" },
       color: { type: "color", default: "#ff2020", label: "Color" },
@@ -582,6 +584,20 @@ export const EFFECTS = {
     },
   },
 };
+
+Object.assign(EFFECTS, CHRISTMAS);
+
+// Themes shown as filter chips in the editor. An effect can belong to several.
+export const THEMES = [["all", "All"], ["halloween", "Halloween"], ["christmas", "Christmas"], ["basics", "Basics"]];
+const TAGS = {
+  fire: ["halloween", "christmas"], candle: ["halloween", "christmas"], text: ["halloween", "christmas", "basics"],
+  lightning: ["halloween"], eyes: ["halloween"], blood: ["halloween"], fog: ["halloween"], static: ["halloween"],
+  pulse: ["halloween"], ghost: ["halloween"], spiders: ["halloween"], portal: ["halloween"], silhouette: ["halloween"],
+  rain: ["halloween", "basics"], grid: ["basics"], solid: ["basics"],
+};
+for (const k of Object.keys(CHRISTMAS)) TAGS[k] = ["christmas"];
+for (const [k, v] of Object.entries(EFFECTS)) v.tags = TAGS[k] || ["basics"];
+export const effectsFor = (theme) => Object.entries(EFFECTS).filter(([, v]) => !theme || theme === "all" || v.tags.includes(theme));
 
 export function defaultParams(effectName) {
   const def = EFFECTS[effectName];

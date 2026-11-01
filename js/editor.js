@@ -4,6 +4,7 @@ import { app, bc, on, emit, sel, sync, commit, undo, redo, replaceState, setOutp
   duplicateSurface, deleteSurface, toggleLock, addSurface, toast, outputAlive, canUndo, canRedo, isDirty } from "./editor/store.js";
 import { scene, start, fit, zoomBy, wallEvent, space } from "./editor/stage.js";
 import { renderLayers } from "./editor/layers.js";
+import { switchScene, nextScene, addScene, renameScene, deleteScene, currentScene } from "./editor/scenes.js";
 import { render as renderInspector } from "./editor/inspector.js";
 import { defaultState } from "./state.js";
 
@@ -12,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 on("sync", () => scene.setState(app.state));
 
 // ---------------- popovers ----------------
-const pops = [["projBtn", "projMenu"], ["btnRemote", "remoteMenu"], ["btnRef", "refMenu"]];
+const pops = [["projBtn", "projMenu"], ["btnRemote", "remoteMenu"], ["btnRef", "refMenu"], ["btnScene", "sceneMenu"]];
 function closePops(except) {
   for (const [b, p] of pops) if (p !== except) { $(p).hidden = true; $(b).setAttribute("aria-expanded", "false"); }
 }
@@ -80,6 +81,7 @@ function handleRemote(cmd) {
   if (cmd === "scare") scare();
   else if (cmd === "blackout") toggleFlag("blackout");
   else if (cmd === "outlines") toggleFlag("showOutlines");
+  else if (cmd === "nextScene") nextScene();
 }
 try { new EventSource("/api/events").onmessage = (e) => { try { handleRemote(JSON.parse(e.data).cmd); } catch (err) {} }; } catch (e) {}
 on("popover", async (p) => {
@@ -336,8 +338,28 @@ $("camShot").addEventListener("click", () => {
   }, "image/jpeg", 0.9);
 });
 
+// ---------------- scenes ----------------
+function renderSceneTabs() {
+  const box = $("sceneTabs"); box.innerHTML = "";
+  for (const sc of app.state.scenes) {
+    const b = document.createElement("button");
+    b.textContent = sc.name;
+    b.className = sc.id === app.state.scene ? "on" : "";
+    b.setAttribute("aria-pressed", String(sc.id === app.state.scene));
+    b.title = sc.id === app.state.scene ? "Current scene (rename it from the + menu)" : `Switch every surface to "${sc.name}"`;
+    b.addEventListener("click", () => switchScene(sc.id));
+    box.appendChild(b);
+  }
+}
+on("change", renderSceneTabs);
+on("popover", (p) => { if (p === "sceneMenu") { $("sceneName").value = currentScene().name; $("sceneDelete").disabled = app.state.scenes.length < 2; } });
+$("sceneName").addEventListener("change", (e) => renameScene(e.target.value));
+$("sceneName").addEventListener("keydown", (e) => { if (e.key === "Enter") { renameScene(e.target.value); closePops(); } });
+$("sceneDelete").addEventListener("click", () => { deleteScene(); closePops(); });
+document.querySelectorAll("#sceneMenu [data-new]").forEach((b) => b.addEventListener("click", () => { addScene(b.dataset.new); closePops(); }));
+
 // ---------------- start ----------------
-sync(); renderLayers(); renderInspector(); updateBars(); start();
+sync(); renderLayers(); renderInspector(); renderSceneTabs(); updateBars(); start();
 refreshMedia();
 setInterval(updateBars, 2000);
 

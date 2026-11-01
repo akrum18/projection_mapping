@@ -159,6 +159,22 @@
   <button id="btnBlackout" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-black"/></svg>Blackout<kbd>B</kbd></button>
   <button id="btnOutlines" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-outline"/></svg>Outlines on wall<kbd>O</kbd></button>
   <button id="btnTest" class="btn tall" aria-pressed="false"><svg class="i"><use href="#i-grid"/></svg>Test pattern<kbd>T</kbd></button>
+  <span class="vsep tall"></span>
+  <span class="showlabel">SCENE</span>
+  <div id="sceneTabs" class="scenetabs" role="group" aria-label="Scenes"></div>
+  <div class="menu-wrap">
+    <button id="btnScene" class="icon tall" aria-label="Scene options and new scene" title="Rename, delete or add scenes" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-plus"/></svg></button>
+    <div id="sceneMenu" class="popover up" hidden>
+      <label class="pfield">This scene's name<input id="sceneName" type="text" spellcheck="false"></label>
+      <button id="sceneDelete" class="mi danger-text">Delete this scene</button>
+      <div class="msub">Add a scene</div>
+      <button class="mi" data-new="christmas"><span>Christmas starter</span><span class="dim small">snow, lights, candy canes</span></button>
+      <button class="mi" data-new="halloween"><span>Halloween starter</span><span class="dim small">eyes, fog, shadows</span></button>
+      <button class="mi" data-new="copy"><span>Copy of this scene</span></button>
+      <button class="mi" data-new="blank"><span>Blank</span><span class="dim small">everything off</span></button>
+      <p class="dim small">Scenes share your surfaces and alignment. Each one has its own content and scares, so one mapped house can run several shows.</p>
+    </div>
+  </div>
   <div class="spacer"></div>
   <svg class="i dim" aria-hidden="true"><use href="#i-sun"/></svg>
   <label for="master" class="dim">Master</label>

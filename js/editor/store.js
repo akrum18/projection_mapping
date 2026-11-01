@@ -17,6 +17,7 @@ export const app = {
   ui: {
     selected: null, selCorner: -1, mode: "transform", tab: "content", source: "effects",
     snap: true, wall: false, guides: [], dragging: false, hover: null, hot: null, focus: false,
+    theme: (() => { try { return localStorage.getItem("pm-theme") || "all"; } catch (e) { return "all"; } })(),
   },
   media: [],
   output: { info: null, seen: -1e9 },

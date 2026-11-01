@@ -1,5 +1,5 @@
 // Inspector: tabs for Content, Look, Scare and Position of the selected surface.
-import { EFFECTS, defaultParams } from "../effects.js";
+import { EFFECTS, THEMES, defaultParams, effectsFor } from "../effects.js";
 import { app, bc, on, sel, sync, commit, addSurface } from "./store.js";
 import { scene } from "./stage.js";
 import { effectThumb, animateInto, mediaThumb, isVideoUrl } from "../thumbs.js";
@@ -48,6 +48,15 @@ function seg(label, options, get, set) {
   }
   row.appendChild(s); return row;
 }
+function dropdown(label, options, get, set) {
+  const row = h("div", "irow wide"), id = "f" + uid++;
+  const l = h("label", null, label); l.htmlFor = id;
+  const sl = h("select"); sl.id = id;
+  for (const [v, name] of options) { const o = h("option", null, name); o.value = v; sl.appendChild(o); }
+  sl.value = get();
+  sl.addEventListener("change", () => { set(sl.value); commit(); });
+  row.append(l, sl); return row;
+}
 function toggles(items) {
   const d = h("div", "mrow");
   for (const [label, get, set] of items) {
@@ -66,7 +75,11 @@ function effectParams(spec, box) {
     if (d.type === "range") box.appendChild(range(d.label, get, set, d.min, d.max, d.step));
     else if (d.type === "color") box.appendChild(color(d.label, get, set));
     else if (d.type === "text") box.appendChild(text(d.label, get, set));
-    else if (d.type === "select") box.appendChild(seg(d.label, d.options.map((o) => [o, o[0].toUpperCase() + o.slice(1)]), get, set));
+    else if (d.type === "select") {
+      const opts = d.options.map((o) => [o, o[0].toUpperCase() + o.slice(1)]);
+      // short lists fit a segmented control; longer ones get a dropdown so they don't overflow
+      box.appendChild(opts.length <= 3 && d.options.join("").length <= 22 ? seg(d.label, opts, get, set) : dropdown(d.label, opts, get, set));
+    }
   }
 }
 
@@ -105,9 +118,21 @@ function tile(spec, label, on, pick, { thumb, effect, none } = {}) {
 }
 const sameSpec = (a, b) => a && b && a.type === b.type && (a.type === "effect" ? a.effect === b.effect : a.type === "media" ? a.url === b.url : true);
 
+// Theme filter chips (All / Halloween / Christmas / Basics) above every effect grid.
+function themeChips() {
+  const d = h("div", "chips"); d.setAttribute("role", "group"); d.setAttribute("aria-label", "Filter effects by theme");
+  for (const [k, name] of THEMES) {
+    const b = h("button", "chip" + (app.ui.theme === k ? " on" : ""));
+    b.textContent = name; b.title = `${effectsFor(k).length} effects`;
+    b.setAttribute("aria-pressed", app.ui.theme === k);
+    b.addEventListener("click", () => { app.ui.theme = k; try { localStorage.setItem("pm-theme", k); } catch (e) {} render(); });
+    d.appendChild(b);
+  }
+  return d;
+}
 function effectTiles(current, choose) {
   const g = h("div", "tiles");
-  for (const [k, v] of Object.entries(EFFECTS)) {
+  for (const [k, v] of effectsFor(app.ui.theme)) {
     const spec = { type: "effect", effect: k, params: defaultParams(k) };
     g.appendChild(tile(spec, v.label, sameSpec(current, spec), () => choose(spec), { thumb: effectThumb(k), effect: k }));
   }
@@ -143,6 +168,7 @@ function contentTab(s, body) {
     if (spec.type === "effect" && s.content.type === "effect" && s.content.effect === spec.effect) return;
     s.content = spec; commit(); render();
   };
+  if (app.ui.source !== "media") body.appendChild(themeChips());
   body.appendChild(app.ui.source === "media" ? mediaTiles(s.content, choose) : effectTiles(s.content, choose));
   if (s.content.type === "effect") { body.appendChild(h("h4", null, (EFFECTS[s.content.effect]?.label || "Effect") + " settings")); effectParams(s.content, body); }
   if (s.content.type === "media" && isVideoUrl(s.content.url)) {
@@ -177,7 +203,7 @@ function scareTab(s, body) {
   const g = h("div", "tiles");
   g.appendChild(tile({ type: "none" }, "Nothing", s.scare.type === "none", () => choose({ type: "none" }), { none: true }));
   for (const m of app.media) { const spec = { type: "media", url: m.url }; g.appendChild(tile(spec, m.name, sameSpec(s.scare, spec), () => choose(spec), { thumb: mediaThumb(m.url, () => render()) || "" })); }
-  for (const [k, v] of Object.entries(EFFECTS)) { const spec = { type: "effect", effect: k, params: defaultParams(k) }; g.appendChild(tile(spec, v.label, sameSpec(s.scare, spec), () => choose(spec), { thumb: effectThumb(k), effect: k })); }
+  for (const [k, v] of effectsFor(app.ui.theme)) { const spec = { type: "effect", effect: k, params: defaultParams(k) }; g.appendChild(tile(spec, v.label, sameSpec(s.scare, spec), () => choose(spec), { thumb: effectThumb(k), effect: k })); }
   if (s.scare.type !== "none") {
     const vid = s.scare.type === "media" && isVideoUrl(s.scare.url);
     if (!vid) body.appendChild(range("Hold for", () => s.scare.duration ?? 4, (v) => (s.scare.duration = v), 0.5, 30, 0.5, (v) => v + " s"));
@@ -188,6 +214,7 @@ function scareTab(s, body) {
     body.appendChild(t);
   }
   body.appendChild(h("h4", null, "Scare source"));
+  body.appendChild(themeChips());
   body.appendChild(g);
 }
 
@@ -264,6 +291,7 @@ export function render() {
     root.appendChild(e);
     const body = h("div", "ibody");
     body.appendChild(h("h4", null, "Effects"));
+    body.appendChild(themeChips());
     body.appendChild(effectTiles(null, (spec) => addSurface(spec)));
     root.appendChild(body);
     return;
