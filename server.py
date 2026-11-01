@@ -2,8 +2,10 @@
 """Projector Mapper server.
 
 Serves the editor/output pages, lists media in ./media, saves projects to
-./projects, accepts drag-and-drop uploads, and relays phone-remote commands
-to the editor with Server-Sent Events.
+./projects, accepts drag-and-drop uploads, relays phone-remote commands to
+the editor, and relays editor <-> projector-window messages over the network
+(Server-Sent Events down, POST up) so the projector window can run on a
+different computer.
 
 Run:  python3 server.py [--port 8787]
 """
@@ -28,14 +30,25 @@ IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg", ".avif"}
 SAFE_NAME = re.compile(r"[^A-Za-z0-9._\- ()]+")
 
 _clients_lock = threading.Lock()
-_clients = set()
+_clients = {}  # queue -> role ("editor" or "output")
+_last_state = None  # latest project state sent to projector windows (JSON text)
 
 
-def broadcast(msg: dict):
-    data = json.dumps(msg)
+def broadcast(msg, role="editor"):
+    data = msg if isinstance(msg, str) else json.dumps(msg)
     with _clients_lock:
-        for q in list(_clients):
-            q.put(data)
+        for q, r in list(_clients.items()):
+            if r == role:
+                q.put(data)
+
+
+def peer_count(role):
+    with _clients_lock:
+        return sum(1 for r in _clients.values() if r == role)
+
+
+def announce_peers():
+    broadcast({"type": "relayPeers", "outputs": peer_count("output")}, "editor")
 
 
 def list_media():
@@ -78,7 +91,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*a, directory=ROOT, **k)
 
     def log_message(self, fmt, *args):
-        if "/api/events" in str(args[0]) if args else False:
+        if args and ("/api/events" in str(args[0]) or "/api/relay" in str(args[0])):
             return
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
 
@@ -127,18 +140,27 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(body)
             return
         if path == "/api/events":
-            return self.serve_events()
+            return self.serve_events("editor")
+        if path == "/api/relay":
+            role = urllib.parse.parse_qs(url.query).get("role", ["output"])[0]
+            return self.serve_events("editor" if role == "editor" else "output")
         return self.serve_file()
 
-    def serve_events(self):
+    def serve_events(self, role):
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "keep-alive")
         self.end_headers()
         q = queue.Queue()
+        if role == "output" and _last_state:
+            q.put(_last_state)  # a new projector window gets the show right away
         with _clients_lock:
-            _clients.add(q)
+            _clients[q] = role
+        if role == "output":
+            announce_peers()
+        else:
+            q.put(json.dumps({"type": "relayPeers", "outputs": peer_count("output")}))
         try:
             self.wfile.write(b": connected\n\n")
             self.wfile.flush()
@@ -153,7 +175,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             pass
         finally:
             with _clients_lock:
-                _clients.discard(q)
+                _clients.pop(q, None)
+            if role == "output":
+                announce_peers()
 
     def serve_file(self):
         """Static file serving with HTTP Range support (needed for video seeking)."""
@@ -246,8 +270,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 msg = json.loads(self.read_body() or b"{}")
             except Exception:
                 return self.send_json({"error": "invalid json"}, 400)
-            broadcast(msg)
+            broadcast({"type": "remote", "cmd": msg.get("cmd")}, "editor")
             return self.send_json({"ok": True})
+        if path == "/api/relay":
+            global _last_state
+            try:
+                body = json.loads(self.read_body() or b"{}")
+            except Exception:
+                return self.send_json({"error": "invalid json"}, 400)
+            to, msg = body.get("to"), body.get("msg")
+            if to not in ("editor", "output") or not isinstance(msg, dict):
+                return self.send_json({"error": "bad relay message"}, 400)
+            data = json.dumps(msg)
+            if to == "output" and msg.get("type") == "state":
+                _last_state = data
+            broadcast(data, to)
+            return self.send_json({"ok": True, "outputs": peer_count("output")})
         return self.send_json({"error": "unknown endpoint"}, 404)
 
     def do_DELETE(self):

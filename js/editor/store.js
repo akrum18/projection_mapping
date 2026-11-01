@@ -1,8 +1,10 @@
 // Editor state: the project (shared with the output window), editor-only UI
 // state, undo/redo, persistence and a tiny event bus for the panels.
-import { defaultState, newSurface, migrate, cloneState, CHANNEL } from "../state.js";
+import { defaultState, newSurface, migrate, cloneState } from "../state.js";
+import { Link } from "../link.js";
 
-export const bc = new BroadcastChannel(CHANNEL);
+// Talks to projector windows on this computer and, through the server, on others.
+export const bc = new Link("editor");
 const listeners = {};
 export const on = (evt, fn) => (listeners[evt] ||= []).push(fn);
 export const emit = (evt, ...a) => (listeners[evt] || []).forEach((fn) => fn(...a));
@@ -20,7 +22,8 @@ export const app = {
     theme: (() => { try { return localStorage.getItem("pm-theme") || "all"; } catch (e) { return "all"; } })(),
   },
   media: [],
-  output: { info: null, seen: -1e9 },
+  output: { info: null, seen: -1e9, count: 0, network: 0 },
+  outputs: {}, // every projector window by id: { w, h, fullscreen, via, seen }
   serverSaved: null, // JSON of the last project saved to / loaded from the server
 };
 app.ui.selected = app.state.surfaces[app.state.surfaces.length - 1]?.id || null;
