@@ -71,6 +71,9 @@ function effectParams(spec, box) {
 }
 
 // ---------- content tiles ----------
+// Only one tile animates at a time; re-rendering the panel ends it.
+let preview = null;
+function endPreview() { preview?.end(); preview = null; }
 function tile(spec, label, on, pick, { thumb, effect, none } = {}) {
   const b = h("button", "tile" + (on ? " on" : "") + (none ? " none" : ""));
   b.draggable = !none;
@@ -81,12 +84,14 @@ function tile(spec, label, on, pick, { thumb, effect, none } = {}) {
   b.title = none ? "No scare for this surface" : `${label}: click to use, or drag onto any surface on the stage`;
   b.addEventListener("click", pick);
   if (effect) {
-    let stop = null, cv = null;
     b.addEventListener("mouseenter", () => {
-      cv = h("canvas", "timg"); cv.width = 160; cv.height = 100;
-      img.replaceWith(cv); stop = animateInto(cv, effect, spec.params);
+      endPreview();
+      const cv = h("canvas", "timg"); cv.width = 160; cv.height = 100;
+      img.replaceWith(cv);
+      const stop = animateInto(cv, effect, spec.params);
+      preview = { tile: b, end: () => { stop(); if (cv.isConnected) cv.replaceWith(img); } };
     });
-    b.addEventListener("mouseleave", () => { stop?.(); if (cv) cv.replaceWith(img); cv = null; });
+    b.addEventListener("mouseleave", () => { if (preview?.tile === b) endPreview(); });
   }
   if (!none) {
     b.addEventListener("dragstart", (e) => {
@@ -241,8 +246,14 @@ function updatePos() {
 
 // ---------- render ----------
 const TABS = [["content", "Content"], ["look", "Look"], ["scare", "Scare"], ["pos", "Position"]];
+let renderedFor = "";
 export function render() {
   const s = sel();
+  // keep the scroll position when re-rendering the same surface and tab (e.g. after a slider change)
+  const key = (s ? s.id : "") + ":" + app.ui.tab;
+  const prevScroll = key === renderedFor ? root.querySelector(".ibody")?.scrollTop || 0 : 0;
+  renderedFor = key;
+  endPreview();
   root.innerHTML = ""; posInputs = null;
   if (!s) {
     const e = h("div", "empty-ins");
@@ -275,6 +286,7 @@ export function render() {
   const body = h("div", "ibody");
   ({ content: contentTab, look: lookTab, scare: scareTab, pos: posTab })[app.ui.tab](s, body);
   root.appendChild(body);
+  body.scrollTop = prevScroll;
 }
 
 on("select", render);

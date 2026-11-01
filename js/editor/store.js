@@ -62,6 +62,7 @@ function fixSelection() {
 // Swap in a snapshot; a surface that reappears (e.g. undoing a delete) becomes the selection.
 function restore(next) {
   const had = new Set(app.state.surfaces.map((x) => x.id));
+  next.output = { ...app.state.output }; // output size follows the real projector, not history
   app.state = next; lastSnapshot = cloneState(app.state);
   const back = app.state.surfaces.filter((x) => !had.has(x.id));
   if (back.length) { app.ui.selected = back[back.length - 1].id; app.ui.selCorner = -1; }

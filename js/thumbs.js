@@ -41,6 +41,7 @@ export function animateInto(canvas, name, params) {
   const p = effectParams(name, params), s = {};
   let raf = 0, last = performance.now();
   const loop = (now) => {
+    if (!canvas.isConnected) return; // tile was re-rendered away while hovered
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     ctx.save();
     try { def.draw(ctx, canvas.width, canvas.height, now / 1000, dt, p, s); } catch (e) {}
