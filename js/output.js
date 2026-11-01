@@ -1,5 +1,6 @@
 import { Scene } from "./scene.js";
-import { migrate, CHANNEL } from "./state.js";
+import { migrate, uid } from "./state.js";
+import { Link } from "./link.js";
 import { drawOutlines, drawTestPattern, drawHandles, drawGuides, fullView, project } from "./overlay.js";
 import { liveSpecs, liveStatus, retryLive } from "./live.js";
 
@@ -11,7 +12,9 @@ const conn = document.getElementById("conn");
 const audioBtn = document.getElementById("audio");
 const wallBadge = document.getElementById("wall");
 const scene = new Scene(glc, { audio: true });
-const bc = new BroadcastChannel(CHANNEL);
+// Same computer as the editor: BroadcastChannel. Otherwise the server relay.
+const bc = new Link("output");
+const oid = uid();
 let state = null;
 let edit = { wall: false }; // editor UI state for "edit on wall"
 let editSeen = 0;
@@ -23,10 +26,11 @@ let hintTimer = null;
 
 bc.onmessage = (e) => {
   const m = e.data;
-  if (m.type === "state") {
+  if (m.type === "relayOpen") { bc.postMessage({ type: "hello" }); sendInfo(); conn.textContent = "Connected to the server over the network. Waiting for the show…"; }
+  else if (m.type === "state") {
     state = migrate(m.state);
     scene.setState(state);
-    conn.textContent = "Connected to editor ✓";
+    conn.textContent = e.via === "network" ? "Connected over the network ✓" : "Connected to editor ✓";
     if (!hintTimer) hintTimer = setTimeout(() => hint.classList.add("hide"), 6000);
   } else if (m.type === "scare") scene.triggerScare(m.ids || null);
   else if (m.type === "ping") sendInfo();
@@ -44,9 +48,13 @@ function size() {
 }
 function sendInfo() {
   const { w, h } = size();
-  bc.postMessage({ type: "outputInfo", w, h, fullscreen: !!document.fullscreenElement });
+  const local = bc.lastLocal && performance.now() - bc.lastLocal < 6000;
+  bc.postMessage({ type: "outputInfo", oid, via: local || !bc.relayOpen ? "local" : "network", w, h, fullscreen: !!document.fullscreenElement });
 }
 bc.postMessage({ type: "hello" });
+// No editor answered in this browser: we're on another computer (or browser), so use the network.
+if (new URLSearchParams(location.search).has("remote")) bc.connectRelay();
+else setTimeout(() => { if (!bc.lastLocal) bc.connectRelay(); }, 1500);
 setInterval(sendInfo, 2000);
 addEventListener("resize", sendInfo);
 
@@ -130,7 +138,8 @@ setInterval(() => {
   liveBox.hidden = !liveNeed;
   if (!liveNeed) return;
   const screen = liveNeed.spec.kind === "screen";
-  liveText.textContent = liveNeed.st.status === "unsupported" ? liveNeed.st.error
+  liveText.textContent = liveNeed.st.status === "unsupported"
+    ? (window.isSecureContext ? liveNeed.st.error : "Live video can't play in a projector window opened over the network: browsers only allow cameras and window capture on localhost or HTTPS.")
     : screen ? `${liveNeed.st.error ? liveNeed.st.error + ". " : ""}This show uses a live window.` : liveNeed.st.error || "The camera stream stopped.";
   liveBtn.textContent = screen ? "Start live window" : "Retry camera";
   liveBtn.hidden = liveNeed.st.status === "unsupported";

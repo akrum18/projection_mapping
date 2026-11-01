@@ -13,7 +13,7 @@ const $ = (id) => document.getElementById(id);
 on("sync", () => scene.setState(app.state));
 
 // ---------------- popovers ----------------
-const pops = [["projBtn", "projMenu"], ["btnRemote", "remoteMenu"], ["btnRef", "refMenu"], ["btnScene", "sceneMenu"]];
+const pops = [["projBtn", "projMenu"], ["btnOutput", "outMenu"], ["btnRemote", "remoteMenu"], ["btnRef", "refMenu"], ["btnScene", "sceneMenu"]];
 function closePops(except) {
   for (const [b, p] of pops) if (p !== except) { $(p).hidden = true; $(b).setAttribute("aria-expanded", "false"); }
 }
@@ -35,12 +35,31 @@ bc.onmessage = (e) => {
   const m = e.data;
   if (m.type === "hello") sync();
   else if (m.type === "outputInfo") {
-    app.output.seen = performance.now(); app.output.info = m;
-    if (app.state.output.w !== m.w || app.state.output.h !== m.h) setOutputSize(m.w, m.h);
+    const key = m.oid || "local", prev = app.outputs[key], now = performance.now();
+    app.outputs[key] = { ...m, via: e.via === "network" && m.via !== "local" ? "network" : m.via || "local", seen: now, first: prev?.first ?? now };
+    pickOutput();
   } else if (m.type === "remote") handleRemote(m.cmd);
   else if (m.type === "wall") wallEvent(m);
   else if (m.type === "key") handleKey({ ...m, preventDefault() {}, fromWall: true });
 };
+// Several projector windows can be connected (this computer and others). The
+// output size follows the one most likely on the projector: fullscreen first,
+// then one on another computer, then whichever connected first.
+function pickOutput() {
+  const now = performance.now();
+  const live = Object.entries(app.outputs).filter(([, o]) => now - o.seen < 5000)
+    .sort(([, x], [, y]) => (y.fullscreen - x.fullscreen) || ((y.via === "network") - (x.via === "network")) || (x.first - y.first));
+  app.output.count = live.length;
+  app.output.network = live.filter(([, o]) => o.via === "network").length;
+  if (!live.length) return;
+  const [, o] = live[0];
+  app.output.info = o; app.output.seen = o.seen;
+  if (app.state.output.w !== o.w || app.state.output.h !== o.h) setOutputSize(o.w, o.h);
+}
+async function lanHost() {
+  if (!/^(localhost|127\.|\[::1\])/.test(location.hostname)) return location.host;
+  try { const info = await (await fetch("/api/info")).json(); return `${info.lan}:${info.port}`; } catch (e) { return "<this-computer-ip>:" + location.port; }
+}
 async function openOutput() {
   if (outWin && !outWin.closed) { outWin.focus(); return; }
   let features = "popup=yes,width=1280,height=720", url = "output.html";
@@ -58,17 +77,32 @@ async function openOutput() {
   outWin = window.open(url, "pm-output", features);
   setTimeout(sync, 500);
 }
-$("btnOutput").addEventListener("click", openOutput);
 on("openOutput", openOutput);
+$("outOpenLocal").addEventListener("click", () => { closePops(); openOutput(); });
+on("popover", async (p) => {
+  if (p !== "outMenu") return;
+  const now = performance.now(), list = $("outList");
+  list.innerHTML = "";
+  const live = Object.values(app.outputs).filter((o) => now - o.seen < 5000);
+  if (!live.length) list.innerHTML = '<div class="empty">No projector window connected yet</div>';
+  for (const o of live) {
+    const row = document.createElement("div"); row.className = "outrow";
+    row.textContent = `${o.via === "network" ? "Another computer" : "This computer"} · ${o.w} × ${o.h}${o.fullscreen ? " · fullscreen" : ""}`;
+    list.appendChild(row);
+  }
+  $("outUrl").textContent = `http://${await lanHost()}/output.html`;
+});
 $("btnWall").addEventListener("click", () => {
   if (!outputAlive() && !app.ui.wall) return toast("Open the projector window first");
   setUI({ wall: !app.ui.wall });
   toast(app.ui.wall ? "Handles are now on the projector. Drag them there with the mouse." : "Edit on wall off");
 });
 function statusTick() {
-  const alive = outputAlive(), i = app.output.info;
+  pickOutput();
+  const alive = outputAlive(), i = app.output.info, n = app.output.count;
   $("btnOutput").classList.toggle("live", alive);
-  $("outStatus").textContent = alive ? `Projector · ${i.w} × ${i.h}${i.fullscreen ? " · fullscreen" : " · windowed"}` : "Open projector window";
+  $("outStatus").textContent = !alive ? "Projector window" : n > 1 ? `${n} projector windows · ${i.w} × ${i.h}`
+    : `Projector${i.via === "network" ? " (network)" : ""} · ${i.w} × ${i.h}${i.fullscreen ? " · fullscreen" : " · windowed"}`;
   if (!alive && app.ui.wall) setUI({ wall: false });
   $("btnWall").setAttribute("aria-pressed", String(app.ui.wall));
 }
@@ -83,15 +117,8 @@ function handleRemote(cmd) {
   else if (cmd === "outlines") toggleFlag("showOutlines");
   else if (cmd === "nextScene") nextScene();
 }
-try { new EventSource("/api/events").onmessage = (e) => { try { handleRemote(JSON.parse(e.data).cmd); } catch (err) {} }; } catch (e) {}
-on("popover", async (p) => {
-  if (p !== "remoteMenu") return;
-  let host = location.host;
-  if (/^(localhost|127\.|\[::1\])/.test(location.hostname)) {
-    try { const info = await (await fetch("/api/info")).json(); host = `${info.lan}:${info.port}`; } catch (e) { host = "<this-computer-ip>:" + location.port; }
-  }
-  $("remoteUrl").textContent = `http://${host}/remote.html`;
-});
+bc.connectRelay(); // phone remote commands and projector windows on other computers
+on("popover", async (p) => { if (p === "remoteMenu") $("remoteUrl").textContent = `http://${await lanHost()}/remote.html`; });
 
 // ---------------- show bar ----------------
 function scare() {

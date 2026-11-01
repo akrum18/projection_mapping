@@ -16,10 +16,12 @@ python3 server.py          # prints the editor and phone-remote URLs
 ```
 
 1. Open **http://localhost:8787/** in Chrome (Firefox works too).
-2. Plug in the projector as an **extended** display (not mirrored).
-3. Click **Open projector window** (top right), drag that window onto the
-   projector screen and press **F** there for fullscreen. (Chrome can place it
-   there automatically if you grant the window-management permission.)
+2. Plug in the projector as an **extended** display (not mirrored), or use
+   another computer for it (see below).
+3. Click **Projector window › Open on this computer** (top right), drag that
+   window onto the projector screen and press **F** there for fullscreen.
+   (Chrome can place it there automatically if you grant the
+   window-management permission.)
 4. Click **Add surface** and drag it over a window, door or prop. Drag the
    square handles to resize it and the round handle to rotate it. Press **W**
    (or double-click it) to switch to **Warp** and pin each corner onto the
@@ -60,6 +62,32 @@ python3 server.py          # prints the editor and phone-remote URLs
 - **House photo**: trace over a photo (or webcam shot) of the house, shown
   dimmed on the stage only, never on the projector.
 - While dragging a warp corner, a magnifier shows the area under the cursor.
+
+## Projector on another computer
+
+The projector window can run on a different computer from the editor, such as
+an old laptop or mini PC plugged into the projector:
+
+1. Run `python3 server.py` on the editor computer.
+2. Click **Projector window** in the editor's top bar. It shows an address
+   like `http://192.168.1.20:8787/output.html`.
+3. On the projector computer, open that address in Chrome (same Wi‑Fi or
+   network) and press **F** for fullscreen.
+
+It connects through the server automatically. Edits, scenes, scares, Blackout,
+outlines and **Edit on wall** all work as usual. Keys pressed on the projector
+computer (Space, B, O, and the editing keys while editing on the wall) go back
+to the editor. The server keeps the latest show, so the projector keeps running
+if the editor closes, and picks the show up again after a reload.
+
+Notes:
+
+- Media files are served by the editor computer, so keep it running.
+- Live video can't play in a projector window opened over the network,
+  because browsers only allow cameras and window capture on localhost or
+  HTTPS. Run live video from a projector window on the editor computer.
+- Anyone on your network can open these pages; run the server on a network
+  you trust.
 
 ## Phone remote
 
@@ -153,7 +181,8 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 
 ## Files
 
-- `server.py` – static server with HTTP range support, media listing, uploads, project save/load, SSE relay for the remote.
+- `server.py` – static server with HTTP range support, media listing, uploads, project save/load, and the network relay (phone remote, projector windows on other computers).
+- `js/link.js` – editor ↔ projector messaging: BroadcastChannel on one computer, the server relay across computers.
 - `index.html`, `js/editor.js` – editor shell (top bar, show bar, fullscreen, keys, projects, uploads).
 - `js/editor/` – `store.js` (state, undo, events), `stage.js` (zoom/pan, preview, handles), `interact.js` (move/resize/rotate/warp + snapping), `layers.js`, `inspector.js`.
 - `js/geometry.js`, `js/overlay.js`, `js/thumbs.js` – shared geometry, overlay drawing, effect/media thumbnails.

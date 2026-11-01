@@ -64,7 +64,18 @@
   <button id="btnUndo" class="icon" aria-label="Undo" title="Undo · Ctrl+Z"><svg class="i"><use href="#i-undo"/></svg></button>
   <button id="btnRedo" class="icon" aria-label="Redo" title="Redo · Ctrl+Shift+Z"><svg class="i"><use href="#i-redo"/></svg></button>
   <div class="spacer"></div>
-  <button id="btnOutput" class="btn outpill" title="Open or focus the projector window"><span class="dot"></span><span id="outStatus">Open projector window</span></button>
+  <div class="menu-wrap">
+    <button id="btnOutput" class="btn outpill" aria-haspopup="true" aria-expanded="false" title="Projector window on this or another computer"><span class="dot"></span><span id="outStatus">Projector window</span><svg class="i sm"><use href="#i-chev"/></svg></button>
+    <div id="outMenu" class="popover right" hidden>
+      <div class="ptitle">Projector window</div>
+      <button id="outOpenLocal" class="btn on">Open on this computer</button>
+      <p class="dim">Or run it on the computer plugged into the projector. On the same network, open this in its browser:</p>
+      <code id="outUrl" class="bigcode">…</code>
+      <p class="dim small">It gets the show from this editor and keeps it if the editor closes. Scares, scenes and Edit on wall work from here as usual.</p>
+      <div class="msub">Connected</div>
+      <div id="outList" class="mlist"></div>
+    </div>
+  </div>
   <button id="btnWall" class="btn" aria-pressed="false" title="Show handles on the projector and drag them there, while looking at the real object"><svg class="i"><use href="#i-hand"/></svg>Edit on wall</button>
   <div class="menu-wrap">
     <button id="btnRemote" class="btn" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-phone"/></svg>Remote</button>
