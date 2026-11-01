@@ -1,5 +1,5 @@
 // Inspector: tabs for Content, Look, Scare and Position of the selected surface.
-import { EFFECTS, THEMES, defaultParams, effectsFor } from "../effects.js";
+import { EFFECTS, THEMES, defaultParams, effectsFor, themedParams } from "../effects.js";
 import { app, bc, on, sel, sync, commit, addSurface } from "./store.js";
 import { scene } from "./stage.js";
 import { effectThumb, animateInto, mediaThumb, isVideoUrl, specThumb } from "../thumbs.js";
@@ -134,8 +134,8 @@ function themeChips() {
 function effectTiles(current, choose) {
   const g = h("div", "tiles");
   for (const [k, v] of effectsFor(app.ui.theme)) {
-    const spec = { type: "effect", effect: k, params: defaultParams(k) };
-    g.appendChild(tile(spec, v.label, sameSpec(current, spec), () => choose(spec), { thumb: effectThumb(k), effect: k }));
+    const spec = { type: "effect", effect: k, params: themedParams(k, app.ui.theme) };
+    g.appendChild(tile(spec, v.label, sameSpec(current, spec), () => choose(spec), { thumb: effectThumb(k, spec.params), effect: k }));
   }
   return g;
 }
@@ -262,7 +262,7 @@ function scareTab(s, body) {
   const g = h("div", "tiles");
   g.appendChild(tile({ type: "none" }, "Nothing", s.scare.type === "none", () => choose({ type: "none" }), { none: true }));
   for (const m of app.media) { const spec = { type: "media", url: m.url }; g.appendChild(tile(spec, m.name, sameSpec(s.scare, spec), () => choose(spec), { thumb: mediaThumb(m.url, () => render()) || "" })); }
-  for (const [k, v] of effectsFor(app.ui.theme)) { const spec = { type: "effect", effect: k, params: defaultParams(k) }; g.appendChild(tile(spec, v.label, sameSpec(s.scare, spec), () => choose(spec), { thumb: effectThumb(k), effect: k })); }
+  for (const [k, v] of effectsFor(app.ui.theme)) { const spec = { type: "effect", effect: k, params: themedParams(k, app.ui.theme) }; g.appendChild(tile(spec, v.label, sameSpec(s.scare, spec), () => choose(spec), { thumb: effectThumb(k, spec.params), effect: k })); }
   if (s.scare.type !== "none") {
     const vid = s.scare.type === "media" && isVideoUrl(s.scare.url);
     if (!vid) body.appendChild(range("Hold for", () => s.scare.duration ?? 4, (v) => (s.scare.duration = v), 0.5, 30, 0.5, (v) => v + " s"));
