@@ -15,6 +15,8 @@ export function defaultState() {
     showOutlines: false,
     testPattern: false,
     brightness: 1,
+    // Editor-only tracing photo of the real object (never shown on the projector).
+    reference: { url: "", opacity: 0.4, show: false },
     surfaces: [],
   };
 }
@@ -25,6 +27,7 @@ export function newSurface(index = 0) {
     id: uid(),
     name: "Surface " + (index + 1),
     visible: true,
+    locked: false,
     corners: [[0.3 + o, 0.3 + o], [0.7 + o, 0.3 + o], [0.7 + o, 0.7 + o], [0.3 + o, 0.7 + o]],
     opacity: 1,
     blend: "normal",
@@ -47,6 +50,7 @@ export function migrate(state) {
   const d = defaultState();
   const s = { ...d, ...(state || {}) };
   s.output = { ...d.output, ...(s.output || {}) };
+  s.reference = { ...d.reference, ...(s.reference || {}) };
   s.surfaces = (s.surfaces || []).map((sf, i) => {
     const n = newSurface(i);
     const out = { ...n, ...sf };

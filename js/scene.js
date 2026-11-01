@@ -188,7 +188,10 @@ export class Scene {
     return true;
   }
 
-  render(w, h) {
+  // view maps normalised output coords to canvas pixels: px = ox + x * sx.
+  // Defaults to filling the canvas; the editor passes one for zoom/pan.
+  render(w, h, view = null) {
+    const v = view || { sx: w, sy: h, ox: 0, oy: 0 };
     const r = this.renderer;
     r.resize(w, h);
     r.begin();
@@ -216,7 +219,7 @@ export class Scene {
         if (!cs || !this.updateSource(cs, sf, "content", spec, t, dt, now)) continue;
         src = cs;
       }
-      const corners = sf.corners.map(([x, y]) => [x * w, y * h]);
+      const corners = sf.corners.map(([x, y]) => [v.ox + x * v.sx, v.oy + y * v.sy]);
       r.drawSurface(src.tex, corners, {
         opacity: sf.opacity, feather: sf.feather, crop: sf.crop, flipH: sf.flipH, flipV: sf.flipV,
         brightness: (sf.brightness ?? 1) * (state.brightness ?? 1), tint: sf.tint, blend: sf.blend,

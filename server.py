@@ -110,6 +110,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self.send_json(list_media())
         if path == "/api/projects":
             return self.send_json(list_projects())
+        if path == "/api/info":
+            return self.send_json({"lan": lan_ip(), "port": self.server.server_address[1]})
         m = re.match(r"^/api/project/(.+)$", path)
         if m:
             p = self.project_path(urllib.parse.unquote(m.group(1)))
