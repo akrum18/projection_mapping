@@ -191,12 +191,14 @@ function refImage() {
   return refImg.complete && refImg.naturalWidth ? refImg : null;
 }
 
-let lastUI = "";
+let lastUI = "", lastUISent = 0;
 function broadcastUI() {
   const d = I.currentDrag();
   const ui = { type: "editUI", wall: app.ui.wall, selected: app.ui.selected, mode: app.ui.mode, corner: app.ui.selCorner, guides: app.ui.guides, hot: app.ui.hot, hover: app.ui.hover, dragging: !!d };
   const sig = JSON.stringify(ui);
-  if (sig !== lastUI) { lastUI = sig; bc.postMessage(ui); }
+  // resend once a second as a heartbeat so the output drops wall mode if the editor goes away
+  const now = performance.now();
+  if (sig !== lastUI || now - lastUISent > 1000) { lastUI = sig; lastUISent = now; bc.postMessage(ui); }
 }
 
 function drawLoupe(ctx, dpr, pt, s) {
@@ -252,13 +254,14 @@ function frameLoop() {
     ctx.fillText("PROJECTOR BLACKED OUT  ·  press B to restore", v.ox + v.sx / 2, v.oy + v.sy / 2);
   }
   ctx.restore();
-  ctx.strokeStyle = "#34343f"; ctx.lineWidth = 1 * dpr; ctx.strokeRect(v.ox - 0.5, v.oy - 0.5, v.sx + 1, v.sy + 1);
+  // fullscreen is a clean preview: no frame border, and only the selected/hovered surface is outlined
+  if (!app.ui.focus) { ctx.strokeStyle = "#34343f"; ctx.lineWidth = 1 * dpr; ctx.strokeRect(v.ox - 0.5, v.oy - 0.5, v.sx + 1, v.sy + 1); }
   if (app.ui.wall) {
     ctx.fillStyle = "#34d399"; ctx.font = `600 ${11 * dpr}px Inter, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
     ctx.fillText("EDITING ON WALL: handles are showing on the projector", v.ox, v.oy - 6 * dpr);
   }
   const s = sel();
-  drawOutlines(ctx, st, v, { selected: app.ui.selected, labels: "top", unit: dpr, hover: app.ui.hover });
+  drawOutlines(ctx, st, v, { selected: app.ui.selected, labels: "top", unit: dpr, hover: app.ui.hover, all: !app.ui.focus });
   drawGuides(ctx, app.ui.guides, v, dpr);
   if (s && !s.locked) drawHandles(ctx, project(s.corners, v), app.ui.mode, { unit: dpr, corner: app.ui.selCorner, hot: I.currentDrag() ? { kind: I.currentDrag().kind, arg: I.currentDrag().arg } : app.ui.hot });
   const d = I.currentDrag();

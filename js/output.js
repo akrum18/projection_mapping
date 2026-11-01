@@ -13,6 +13,11 @@ const scene = new Scene(glc, { audio: true });
 const bc = new BroadcastChannel(CHANNEL);
 let state = null;
 let edit = { wall: false }; // editor UI state for "edit on wall"
+let editSeen = 0;
+function setWall(on) {
+  document.body.classList.toggle("wall", on);
+  wallBadge.hidden = !on;
+}
 let hintTimer = null;
 
 bc.onmessage = (e) => {
@@ -26,9 +31,8 @@ bc.onmessage = (e) => {
   else if (m.type === "ping") sendInfo();
   else if (m.type === "editUI") {
     const was = edit.wall;
-    edit = m;
-    document.body.classList.toggle("wall", !!m.wall);
-    wallBadge.hidden = !m.wall;
+    edit = m; editSeen = performance.now();
+    setWall(!!m.wall);
     if (m.wall && !was) hint.classList.add("hide");
   }
 };
@@ -56,6 +60,8 @@ function frame() {
   scene.render(w, h);
   if (ov.width !== w || ov.height !== h) { ov.width = w; ov.height = h; }
   octx.clearRect(0, 0, w, h);
+  // editor closed or crashed while editing on the wall: don't leave handles on the projector
+  if (edit.wall && performance.now() - editSeen > 4000) { edit = { wall: false }; setWall(false); }
   if (state) {
     const v = fullView(w, h);
     if (state.testPattern) drawTestPattern(octx, w, h);

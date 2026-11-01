@@ -2,7 +2,7 @@
 // A "view" maps normalised output coords to canvas pixels: px = ox + x * sx.
 import { bbox } from "./geometry.js";
 
-export const COLORS = { accent: "#ff8a1f", guide: "#ff5ad1", line: "rgba(255,255,255,0.55)", hidden: "rgba(160,160,170,0.6)" };
+export const COLORS = { accent: "#ff8a1f", guide: "#ff5ad1", line: "rgba(255,255,255,0.35)", hidden: "rgba(160,160,170,0.6)" };
 
 export const fullView = (w, h) => ({ sx: w, sy: h, ox: 0, oy: 0 });
 export const project = (corners, v) => corners.map(([x, y]) => [v.ox + x * v.sx, v.oy + y * v.sy]);
@@ -45,9 +45,9 @@ export function drawOutlines(ctx, state, view, opts = {}) {
   ctx.save();
   state.surfaces.forEach((sf, i) => {
     const sel = sf.id === opts.selected;
-    if (!sel && opts.all === false) return;
-    const c = project(sf.corners, view);
     const hov = sf.id === opts.hover && !sel;
+    if (!sel && !hov && opts.all === false) return; // all:false = only selected/hovered
+    const c = project(sf.corners, view);
     ctx.lineWidth = (sel ? 2 : hov ? 2 : 1.25) * u;
     ctx.strokeStyle = sel ? COLORS.accent : hov ? "rgba(255,190,130,0.9)" : sf.visible ? COLORS.line : COLORS.hidden;
     ctx.setLineDash(sf.visible ? [] : [6 * u, 5 * u]);
