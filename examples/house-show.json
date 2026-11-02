@@ -119,27 +119,23 @@
     "space": {
      "content": {
       "type": "effect",
-      "effect": "meteors",
+      "effect": "stars",
       "params": {
-       "rate": 10,
-       "x": 0.85,
-       "y": -0.3,
-       "fireballs": "fireballs",
-       "color": "mixed",
-       "sky": "stars"
+       "density": 1.2,
+       "shooting": 0.25,
+       "sky": "black"
       }
      },
      "scare": {
       "type": "effect",
-      "effect": "warp",
+      "effect": "stars",
       "params": {
-       "mode": "jump",
-       "length": 10,
-       "x": 0.5,
-       "y": 0.35
+       "density": 1.4,
+       "shooting": 1,
+       "sky": "black"
       },
-      "duration": 10,
-      "delay": 14
+      "duration": 16,
+      "delay": 10
      }
     }
    }
@@ -239,16 +235,7 @@
     },
     "space": {
      "content": {
-      "type": "effect",
-      "effect": "comet",
-      "params": {
-       "x": 0.97,
-       "y": 0.4,
-       "angle": 180,
-       "length": 1.3,
-       "sky": "transparent",
-       "drift": 0
-      }
+      "type": "none"
      },
      "scare": {
       "type": "none",
@@ -1806,9 +1793,9 @@
       "type": "effect",
       "effect": "sun",
       "params": {
+       "look": "ultraviolet 304",
        "size": 0.95,
-       "corona": 0,
-       "flares": "calm",
+       "loops": 0.8,
        "sky": "black"
       }
      },

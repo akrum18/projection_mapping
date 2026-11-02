@@ -41,11 +41,11 @@ const STARTERS = {
   christmas: { tall: "candycane", roof: "icicles", wide: "lights", big: ["village", "fireplace", "aurora", "sleigh"], other: ["xmastree", "santawindow", "snowman", "wreath", "snowglobe", "ornaments", "gift", "snow"] },
   halloween: { tall: "candle", roof: "blood", wide: "fog", big: ["fireplace", "lightning", "portal"], other: ["watcher", "eyes", "silhouette", "ghost", "spiders", "fire"] },
   space: {
-    tall: "launch", roof: "meteors", wide: ["milkyway", { horizon: "none" }],
-    big: ["galaxy", "nebula", "blackhole", "solarsystem", "orbit", "eclipse"],
-    other: ["planet", ["planet", { body: "saturn" }], ["planet", { body: "moon", sun: 95 }], "sun", ["planet", { body: "jupiter" }], "comet", ["planet", { body: "mars" }], "constellations", ["nebula", { style: "planetary" }], ["planet", { body: "neptune" }]],
-    // the show moment: big areas jump to warp, everything else gets a meteor storm
-    scare: { big: ["warp", { mode: "jump", length: 10 }], other: ["meteors", { mode: "storm" }], duration: 10 },
+    tall: "launch", roof: ["stars", { sky: "black", density: 1.4 }], wide: ["milkyway", { horizon: "none" }],
+    big: ["galaxy", "sun", "blackhole", "solarsystem", "orbit"],
+    other: ["planet", ["planet", { body: "saturn" }], ["planet", { body: "moon", sun: 95 }], ["planet", { body: "jupiter" }], "constellations", ["planet", { body: "mars" }], ["planet", { body: "neptune" }], ["planet", { body: "venus" }], ["planet", { body: "pluto" }]],
+    // the show moment: a rocket launches on every big area
+    scare: { big: ["launch", { mode: "show", sky: "none", countdown: "no text", length: 30 }], other: null, duration: 26 },
   },
 };
 const pick = (e, kind) => { const [fx, over] = Array.isArray(e) ? e : [e, null]; return { type: "effect", effect: fx, params: { ...themedParams(fx, kind), ...(over || {}) } }; };
@@ -61,7 +61,7 @@ function starterLooks(kind) {
     else fx = S.other[n.other++ % S.other.length];
     let scare = { type: "none", duration: 4 };
     if (kind === "halloween") scare = cloneState(sf.scare);
-    else if (S.scare) scare = { ...pick(isBig ? S.scare.big : S.scare.other, kind), duration: S.scare.duration };
+    else if (S.scare && (isBig ? S.scare.big : S.scare.other)) scare = { ...pick(isBig ? S.scare.big : S.scare.other, kind), duration: S.scare.duration };
     return { content: pick(fx, kind), scare };
   });
 }

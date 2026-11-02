@@ -580,6 +580,48 @@ function* sunTex(W, H, seed) {
   return { W, H, day };
 }
 
+// The Sun as NASA's Solar Dynamics Observatory sees it in extreme ultraviolet. What
+// shows is the chromosphere and corona: a bright network outlining the supergranule
+// cells, mottled fibrils, brilliant active regions (plage) over the sunspot belts, and
+// long dark filaments (prominences seen from above). Stored as intensity / 2.
+const sunRng = seeded(1304);
+export const SUN_AR = Array.from({ length: 8 }, (_, i) => {
+  const lat = (i % 2 ? 1 : -1) * (9 + sunRng() * 24), lon = -180 + (360 * (i + sunRng() * 0.6)) / 8;
+  return { lat, lon, r: 7 + sunRng() * 8, axis: (sunRng() - 0.5) * 0.8, c: unit(lat, lon) };
+});
+const SUN_FIL = Array.from({ length: 10 }, () => {
+  const lat = (sunRng() < 0.5 ? -1 : 1) * (14 + sunRng() * 40), lon = sunRng() * 360 - 180, len = 10 + sunRng() * 24, ang = (sunRng() - 0.5) * 1.2;
+  const dl = (Math.sin(ang) * len) / 2, dn = (Math.cos(ang) * len) / 2 / Math.cos(lat * RAD);
+  const A = unit(lat + dl, lon + dn), B = unit(lat - dl, lon - dn);
+  const n = [A[1] * B[2] - A[2] * B[1], A[2] * B[0] - A[0] * B[2], A[0] * B[1] - A[1] * B[0]], nl = Math.hypot(...n);
+  return { A, B, n: n.map((v) => v / nl), span: Math.acos(clamp(A[0] * B[0] + A[1] * B[1] + A[2] * B[2], -1, 1)), w: (0.45 + sunRng() * 0.6) * RAD };
+});
+function* sunUVTex(W, H) {
+  const n = W * H, day = new Uint8ClampedArray(n * 3);
+  yield* eachTexel(W, H, (k, x, y, z, lat) => {
+    // the network outlines supergranules ~30 000 km across: hundreds of cells across the disc
+    const net = ridged3(x * 44, y * 44, z * 44, 3, 21), mott = fbm3(x * 120, y * 120, z * 120, 3, 22), grain = noise3(x * 420, y * 420, z * 420, 23);
+    const broad = fbm3(x * 4, y * 4, z * 4, 3, 27) - 0.5;
+    let I = 0.42 + 0.3 * smooth(0.5, 0.95, net) + 0.16 * (mott - 0.5) + 0.07 * (grain - 0.5) + 0.12 * broad;
+    let ar = 0;
+    for (const A of SUN_AR) { const d = Math.acos(clamp(x * A.c[0] + y * A.c[1] + z * A.c[2], -1, 1)) / (A.r * RAD); if (d < 2.5) ar = Math.max(ar, Math.exp(-d * d)); }
+    if (ar > 0.01) {
+      const pl = fbm3(x * 34, y * 34, z * 34, 4, 24), kn = noise3(x * 130, y * 130, z * 130, 25);
+      I += ar * (0.25 + 0.8 * smooth(0.3, 0.75, pl) + 0.6 * smooth(0.68, 0.9, kn));
+    }
+    for (const F of SUN_FIL) {
+      const da = Math.acos(clamp(x * F.A[0] + y * F.A[1] + z * F.A[2], -1, 1)), db = Math.acos(clamp(x * F.B[0] + y * F.B[1] + z * F.B[2], -1, 1));
+      if (da > F.span + 0.05 || db > F.span + 0.05) continue;
+      const dist = Math.abs(Math.asin(clamp(x * F.n[0] + y * F.n[1] + z * F.n[2], -1, 1))) + (noise3(x * 40, y * 40, z * 40, 26) - 0.5) * F.w * 1.6;
+      const taper = smooth(0, 0.25, Math.min(da, db) / F.span);
+      I *= 1 - 0.6 * Math.exp(-((dist / (F.w * (0.4 + 0.6 * taper))) ** 2)) * taper;
+    }
+    I *= 1 - 0.2 * smooth(55, 75, Math.abs(lat)); // quieter, darker polar regions
+    day[k * 3] = day[k * 3 + 1] = day[k * 3 + 2] = 127.5 * clamp(I, 0, 2);
+  });
+  return { W, H, day };
+}
+
 // tilt: spin axis rolled in the picture (°); pitch: axis tipped toward you (rad).
 // spin: rad/s at speed 1. light: "lambert" (lit gas and cloud), "lommel" (airless dust,
 // flat-looking full disc). ring: [inner, outer] in planet radii.
@@ -597,6 +639,7 @@ export const BODIES = {
   "lava world": { label: "Lava world", gen: lavaTex, tilt: 12, pitch: 0.1, spin: 0.05, light: "mixed", atmo: [255, 120, 60], atmoK: 0.45, ambient: 0.02, bump: 2, emitK: 1 },
   sun: { label: "Sun", gen: (W, H) => sunTex(W, H, 1), emissive: true },
   sun2: { label: "Sun", gen: (W, H) => sunTex(W, H, 2), emissive: true },
+  sunuv: { label: "Sun", gen: sunUVTex, emissive: true, uv: true },
 };
 
 // Textures are generated once per body. The small one (tile previews, and the first
@@ -622,7 +665,7 @@ export function bodyTex(name, level) {
   for (let l = 1; l <= level; l++) {
     if (texCache.has(keys[l])) { best = keys[l]; continue; }
     if (!queue.some((j) => j.key === keys[l])) {
-      const W = l === 2 ? 2048 : name === "earth" || name === "moon" ? 1024 : 768;
+      const W = l === 2 ? 2048 : name === "earth" || name === "moon" || name === "sunuv" ? 1024 : 768;
       queue.push({ key: keys[l], gen: BODIES[name].gen(W, W / 2) });
       if (!pumping) { pumping = true; setTimeout(pump, 0); }
     }
@@ -740,8 +783,15 @@ export class SphereView {
       let r = day[i00 * 3] * w00 + day[i10 * 3] * w10 + day[i01 * 3] * w01 + day[i11 * 3] * w11;
       let g = day[i00 * 3 + 1] * w00 + day[i10 * 3 + 1] * w10 + day[i01 * 3 + 1] * w01 + day[i11 * 3 + 1] * w11;
       let b = day[i00 * 3 + 2] * w00 + day[i10 * 3 + 2] * w10 + day[i01 * 3 + 2] * w01 + day[i11 * 3 + 2] * w11;
-      if (star) {
-        // limb darkening: dimmer and redder toward the edge
+      if (star && o.palette) {
+        // ultraviolet: the limb brightens (we look through more of the hot upper layers),
+        // and intensity maps through the telescope's false-colour table
+        const mu = nz, I = (r / 127.5) * (o.gain ?? 1) * (0.84 + 0.5 * Math.pow(1 - mu, 3));
+        const P = o.palette;
+        let c = P[P.length - 1];
+        for (let q = 1; q < P.length; q++) if (I <= P[q][0]) { const A = P[q - 1], B = P[q], f = (I - A[0]) / (B[0] - A[0]); c = [0, A[1] + (B[1] - A[1]) * f, A[2] + (B[2] - A[2]) * f, A[3] + (B[3] - A[3]) * f]; break; }
+        r = c[1]; g = c[2]; b = c[3];
+      } else if (star) {
         // limb darkening, and the colour shift that goes with it: near-white where we see
         // deep, hot layers at the centre, through the star's colour to deep orange-red at the edge
         const mu = nz, I = (r / 255) * (1 - 0.62 * (1 - mu) - 0.2 * (1 - mu) * (1 - mu)) * exp;

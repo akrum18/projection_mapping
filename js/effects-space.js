@@ -7,9 +7,10 @@
 // the Moon, Olympus Mons and Valles Marineris on Mars, the Great Red Spot, Saturn's
 // rings with the Cassini division and their shadows, and so on.
 import { TAU, rnd, clamp, seeded, rgba, hexToRgb } from "./fx-util.js";
-import { BODIES, bodyTex, planetView, axesFor, starfield, glow, drawSpikes, smooth, noise3 } from "./space-gfx.js";
+import { BODIES, bodyTex, planetView, axesFor, starfield, glow, drawSpikes, smooth, noise3, SUN_AR } from "./space-gfx.js";
 
 export const SPACE = {};
+const unit = (la, lo) => [Math.cos(la * Math.PI / 180) * Math.sin(lo * Math.PI / 180), Math.sin(la * Math.PI / 180), Math.cos(la * Math.PI / 180) * Math.cos(lo * Math.PI / 180)];
 const RAD = Math.PI / 180;
 export const SKY = { type: "select", options: ["stars", "black", "transparent"], default: "stars", label: "Background" };
 export function spaceBg(ctx, w, h, t, s, mode, opts) {
@@ -116,32 +117,11 @@ SPACE.planet = {
 };
 
 // ================================================================== the Sun
-const STAR_TYPES = {
-  sun: { disc: [255, 196, 96], corona: "#fff1dc", prom: "#ff3c2a", chrom: "#ff4a3a" },
-  "red dwarf": { disc: [255, 150, 80], corona: "#ffb07a", prom: "#ff3a1c", chrom: "#ff4a2a" },
-  "blue giant": { disc: [190, 212, 255], corona: "#d6e4ff", prom: "#9fb6ff", chrom: "#b7c8ff" },
-};
-// A coronal streamer: a long, tapering, soft ray, drawn rotated around the star.
-const streamers = new Map();
-function streamerSprite(color) {
-  if (streamers.has(color)) return streamers.get(color);
-  const c = document.createElement("canvas"); c.width = 64; c.height = 256;
-  const g = c.getContext("2d"), [r, gg, b] = hexToRgb(color);
-  for (let y = 0; y < 256; y++) {
-    const u = y / 255, wd = 30 * (1 - u) ** 0.7 + 2, a = (1 - u) ** 1.6;
-    const gr = g.createLinearGradient(32 - wd, 0, 32 + wd, 0);
-    gr.addColorStop(0, `rgba(${r},${gg},${b},0)`); gr.addColorStop(0.5, `rgba(${r},${gg},${b},${a})`); gr.addColorStop(1, `rgba(${r},${gg},${b},0)`);
-    g.fillStyle = gr; g.fillRect(0, 255 - y, 64, 1);
-  }
-  streamers.set(color, c);
-  return c;
-}
-// Prominences: arching loops of plasma anchored on the limb, with material draining
-// along the field lines. Shared by the Sun and the eclipse.
 // Prominences: arches of glowing hydrogen held up by magnetic fields. Each is a bundle
 // of fine threads that wander apart and together, with knots of plasma draining down
 // the legs. Seen against space they glow red; they are far fainter than the disc.
-export function prominences(ctx, cx, cy, R, t, list, color, alpha = 1) {
+// fuzzy: ultraviolet look, where prominences are glowing clouds of fine threads
+export function prominences(ctx, cx, cy, R, t, list, color, alpha = 1, fuzzy = false) {
   const spr = glow(color, 32, 0.3);
   ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.lineCap = "round";
   for (const P of list) {
@@ -157,12 +137,15 @@ export function prominences(ctx, cx, cy, R, t, list, color, alpha = 1) {
         const a = a0 + (a1 - a0) * u, rr = R * (0.995 + hgt * Math.sin(Math.PI * u) * (1 + wob));
         return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr];
       };
-      // a faint diffuse glow, then the threads
-      ctx.strokeStyle = color; ctx.globalAlpha = 0.05 * alpha * fadeA; ctx.lineWidth = Math.max(1, R * 0.06 * P.thick);
-      ctx.beginPath(); for (let i = 0; i <= 24; i++) { const [x, y] = pt(i / 24, 3); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+      // a diffuse glow (layered wide and soft when fuzzy), then the threads
+      ctx.strokeStyle = color;
+      for (const [wd, al] of fuzzy ? [[0.11, 0.035], [0.07, 0.05], [0.04, 0.07]] : [[0.06, 0.05]]) {
+        ctx.globalAlpha = al * alpha * fadeA; ctx.lineWidth = Math.max(1, R * wd * P.thick);
+        ctx.beginPath(); for (let i = 0; i <= 24; i++) { const [x, y] = pt(i / 24, 3); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+      }
       ctx.lineWidth = Math.max(0.5, R * 0.006 * P.thick);
       for (let k = 0; k < 7; k++) {
-        ctx.globalAlpha = (0.12 + 0.1 * Math.sin(k * 2.3 + t * 0.5)) * alpha * fadeA;
+        ctx.globalAlpha = (0.12 + 0.1 * Math.sin(k * 2.3 + t * 0.5)) * alpha * fadeA * (fuzzy ? 0.6 : 1);
         ctx.beginPath(); for (let i = 0; i <= 32; i++) { const [x, y] = pt(i / 32, k); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
       }
       for (let i = 0; i < 12; i++) {
@@ -174,230 +157,157 @@ export function prominences(ctx, cx, cy, R, t, list, color, alpha = 1) {
   }
   ctx.restore();
 }
-function makeProminences(rng, n, t0 = 0) {
-  return Array.from({ length: n }, () => ({ a: rng() * TAU, span: 0.05 + rng() * 0.1, h: 0.05 + rng() * 0.12, loops: 2 + (rng() * 3 | 0), ph: rng() * 10, thick: 0.7 + rng() * 0.8, t0 }));
+function makeProminences(rng, n, t0 = 0, scale = 1) {
+  return Array.from({ length: n }, () => ({ a: rng() * TAU, span: 0.05 + rng() * 0.1, h: (0.05 + rng() * 0.12) * scale, loops: 2 + (rng() * 3 | 0), ph: rng() * 10, thick: 0.7 + rng() * 0.8, t0 }));
+}
+
+// Two SDO channels and plain visible light. Palette stops: [intensity, r, g, b].
+const SUN_LOOKS = {
+  "ultraviolet 304": { pal: [[0, 0, 0, 0], [0.2, 80, 10, 0], [0.4, 175, 45, 0], [0.62, 238, 105, 12], [0.82, 255, 165, 52], [1.02, 255, 215, 125], [1.4, 255, 248, 215]], gain: 1, loop: "#ff9a3c", loopA: 0.1, prom: "#e85a18", promA: 1, glow: "#ff6a10", fuzzy: true },
+  "ultraviolet 171": { pal: [[0, 0, 0, 0], [0.22, 52, 34, 4], [0.45, 150, 104, 18], [0.7, 228, 176, 52], [0.92, 252, 218, 112], [1.15, 255, 244, 196], [1.5, 255, 255, 250]], gain: 0.92, loop: "#ffd27a", loopA: 0.3, prom: "#d89a38", promA: 0.8, glow: "#d0a040", fuzzy: true },
+  "visible light": { disc: [255, 196, 96], prom: "#ff3c2a", chrom: "#ff4a3a" },
+};
+const palColor = (P, x) => { for (let i = 1; i < P.length; i++) if (x <= P[i][0]) { const A = P[i - 1], B = P[i], f = (x - A[0]) / (B[0] - A[0]); return `rgb(${A[1] + (B[1] - A[1]) * f | 0},${A[2] + (B[2] - A[2]) * f | 0},${A[3] + (B[3] - A[3]) * f | 0})`; } const L = P[P.length - 1]; return `rgb(${L[1]},${L[2]},${L[3]})`; };
+const SUN_TILT = 7, SUN_PITCH = 0.12;
+
+// Magnetic loops over each active region: arches between footpoints of opposite
+// polarity, as tall as they are wide. Built once in body coordinates.
+function sunLoops() {
+  const rng = seeded(171), out = [];
+  for (const [ai, A] of SUN_AR.entries()) for (let k = 0; k < 11; k++) {
+    const sep = A.r * (0.25 + rng() * 0.75) * RAD, ang = A.axis + (rng() - 0.5) * 0.5, off = (rng() - 0.5) * A.r * 0.6 * RAD;
+    // footpoints either side of the region's centre, in latitude/longitude space
+    const la = A.lat * RAD + off, lo = A.lon * RAD + (rng() - 0.5) * A.r * 0.3 * RAD;
+    const dla = (Math.sin(ang) * sep) / 2, dlo = (Math.cos(ang) * sep) / 2 / Math.cos(la);
+    const f = (a, o) => [Math.cos(a) * Math.sin(o), Math.sin(a), Math.cos(a) * Math.cos(o)];
+    out.push({ ar: ai, F1: f(la + dla, lo + dlo), F2: f(la - dla, lo - dlo), h: sep * (0.45 + rng() * 0.5), w: 0.6 + rng() * 0.8, ph: rng() * TAU });
+  }
+  return out;
+}
+let SUN_LOOPS = null;
+// Body → screen for the Sun turned by rot: returns [x, y, z] in units of R (y up).
+function sunToView(ax, b, rot) {
+  const c = Math.cos(-rot), sn = Math.sin(-rot), x = b[0] * c + b[2] * sn, z = -b[0] * sn + b[2] * c;
+  return ax.toView(x, b[1], z);
 }
 
 SPACE.sun = {
   label: "The Sun",
   params: {
-    star: { type: "select", options: Object.keys(STAR_TYPES), default: "sun", label: "Star" },
-    size: { type: "range", min: 0.2, max: 1.2, step: 0.01, default: 0.6, label: "Size" },
+    look: { type: "select", options: Object.keys(SUN_LOOKS), default: "ultraviolet 304", label: "Seen in" },
+    size: { type: "range", min: 0.2, max: 1.2, step: 0.01, default: 0.72, label: "Size" },
     activity: { type: "range", min: 0, max: 2, step: 0.05, default: 1, label: "Activity" },
-    corona: { type: "range", min: 0, max: 2, step: 0.05, default: 0.6, label: "Corona" },
+    loops: { type: "range", min: 0, max: 2, step: 0.05, default: 1, label: "Loops" },
     spin: { type: "range", min: 0, max: 5, step: 0.1, default: 1, label: "Spin speed" },
     flares: { type: "select", options: ["flares", "calm"], default: "flares", label: "Flares" },
     sky: { ...SKY, default: "black" },
   },
   draw(ctx, w, h, t, dt, p, s) {
-    const T = STAR_TYPES[p.star] || STAR_TYPES.sun, cx = w / 2, cy = h / 2;
+    const Lk = SUN_LOOKS[p.look] || SUN_LOOKS["ultraviolet 304"], uv = !!Lk.pal, cx = w / 2, cy = h / 2;
     spaceBg(ctx, w, h, t, s, p.sky, { density: 0.5, seed: 33 });
-    const R = Math.max(4, (Math.min(w, h) / 2) * 0.82 * p.size);
-    if (!s.rays || s.raysFor !== p.star) {
+    const R = Math.max(4, (Math.min(w, h) / 2) * 0.8 * p.size), u = Math.max(0.6, R / 200);
+    const ax = axesFor(SUN_TILT, SUN_PITCH), rot = t * 0.02 * p.spin;
+    if (!s.proms || s.look !== p.look) {
       const rng = seeded(5);
-      s.raysFor = p.star;
-      s.rays = Array.from({ length: 70 }, () => ({ a: rng() * TAU, len: 0.6 + rng() * 2.4, wd: 0.25 + rng() * 0.7, al: 0.05 + rng() * 0.12, ph: rng() * TAU }));
-      s.proms = makeProminences(rng, 7);
-      s.flare = null; s.nextFlare = t + 3 + rng() * 4;
+      s.look = p.look;
+      s.proms = makeProminences(rng, uv ? 6 : 7, 0, uv ? 1.9 : 1);
+      s.flare = null; s.erupt = null; s.nextFlare = t + 4 + rng() * 4; s.sparks = [];
     }
-    // corona: a soft glow plus slowly breathing streamers
-    const cg = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * (2.2 + p.corona));
-    cg.addColorStop(0, rgba(T.corona, 0.55 * Math.min(1, p.corona))); cg.addColorStop(0.15, rgba(T.corona, 0.18 * p.corona)); cg.addColorStop(1, rgba(T.corona, 0));
-    ctx.fillStyle = cg; ctx.fillRect(0, 0, w, h);
-    if (p.corona > 0) {
-      const spr = streamerSprite(T.corona);
-      ctx.save(); ctx.globalCompositeOperation = "lighter";
-      for (const r of s.rays) {
-        const len = R * r.len * (0.85 + 0.15 * Math.sin(t * 0.3 + r.ph)) * p.corona, wd = R * r.wd;
-        ctx.save(); ctx.translate(cx, cy); ctx.rotate(r.a + Math.sin(t * 0.05 + r.ph) * 0.03);
-        ctx.globalAlpha = r.al * Math.min(1.5, p.corona); ctx.drawImage(spr, -wd / 2, -R * 0.95 - len, wd, len);
-        ctx.restore();
-      }
-      ctx.restore();
-    }
-    // prominences on the limb (more with activity), and an eruption during a flare
-    const nP = Math.round(s.proms.length * Math.min(1, p.activity));
-    prominences(ctx, cx, cy, R, t, s.proms.slice(0, nP), T.prom, Math.min(1.4, 0.4 + p.activity * 0.6));
+    SUN_LOOPS ||= sunLoops();
+    const arView = SUN_AR.map((A) => sunToView(ax, A.c, rot));
+    // a flare: one of the active regions flashes and its loops fill with hot plasma;
+    // near the limb a prominence erupts off the edge
     if (p.flares === "flares" && p.activity > 0 && t > s.nextFlare && !s.flare) {
-      const a = rnd(TAU);
-      s.flare = { t0: t, a, r: rnd(0.75, 0.45), dur: 6 };
-      s.erupt = [{ a, span: 0.12, h: 0.2, loops: 2, ph: rnd(10), thick: 1.3, erupt: true, t0: t + 0.6, dur: 7 }];
-      s.nextFlare = t + rnd(18, 8) / p.activity;
+      const vis = arView.map((v, i) => [v, i]).filter(([v]) => v[2] > 0.1);
+      if (vis.length) {
+        const [v, i] = vis[(Math.random() * vis.length) | 0];
+        s.flare = { t0: t, ar: i, dur: 9 };
+        if (v[2] < 0.45) s.erupt = [{ a: Math.atan2(-v[1], v[0]), span: 0.1, h: 0.25, loops: 3, ph: rnd(10), thick: 1.4, erupt: true, t0: t + 0.8, dur: 9 }];
+      }
+      s.nextFlare = t + rnd(24, 10) / Math.max(0.2, p.activity);
     }
-    if (s.erupt) prominences(ctx, cx, cy, R, t, s.erupt, T.prom, 1.2);
-    // the photosphere: two granulation layers turning at slightly different speeds (boiling)
-    const b = big(w, h);
-    const pv = planetView(s, "sv", w, h, cx, cy, R, { tilt: 7, pitch: 0.1, halo: 0.03 }, 200);
-    const rot = t * 0.025 * p.spin;
+    const fe = s.flare ? (t - s.flare.t0) / s.flare.dur : 2;
+    if (fe > 1) { s.flare = null; if (s.erupt && t > s.erupt[0].t0 + s.erupt[0].dur) s.erupt = null; }
+    const flareI = fe <= 1 ? (fe < 0.06 ? fe / 0.06 : Math.exp(-(fe - 0.06) * 4)) : 0;
+
+    if (uv) {
+      // the glow of the corona just above the limb
+      const gg = ctx.createRadialGradient(cx, cy, R * 0.95, cx, cy, R * 1.45);
+      gg.addColorStop(0, rgba(Lk.glow, 0.45)); gg.addColorStop(0.12, rgba(Lk.glow, 0.16)); gg.addColorStop(1, rgba(Lk.glow, 0));
+      ctx.fillStyle = gg; ctx.fillRect(0, 0, w, h);
+    }
+    // prominences behind and around the limb
+    const nP = Math.round(s.proms.length * Math.min(1, p.activity));
+    prominences(ctx, cx, cy, R, t, s.proms.slice(0, nP), Lk.prom, (uv ? Lk.promA : 1) * Math.min(1.4, 0.4 + p.activity * 0.6), Lk.fuzzy);
+    if (s.erupt) prominences(ctx, cx, cy, R, t, s.erupt, Lk.prom, uv ? Lk.promA * 1.3 : 1.2, Lk.fuzzy);
+
+    // the disc
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(pv.view.draw(bodyTex("sun", b), BODIES.sun, { rot, L: [0, 0, 1], tint: T.disc, exposure: 1.12 }), 0, 0, w, h);
-    ctx.globalAlpha = 0.3 + 0.1 * Math.sin(t * 0.7);
-    ctx.drawImage(pv.view.draw(bodyTex("sun2", b), BODIES.sun2, { rot: rot * 1.4 + Math.sin(t * 0.13) * 0.02, L: [0, 0, 1], tint: T.disc, exposure: 1.12 }), 0, 0, w, h);
-    ctx.globalAlpha = 1;
-    // chromosphere: a thin ragged rim of spicules
-    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = T.chrom;
-    ctx.globalAlpha = 0.22; ctx.lineWidth = Math.max(1, R * 0.012); ctx.beginPath(); ctx.arc(cx, cy, R * 1.003, 0, TAU); ctx.stroke();
-    ctx.lineWidth = Math.max(0.5, R * 0.004); ctx.globalAlpha = 0.1; ctx.beginPath();
-    const nsp = Math.round(Math.min(360, R * 2));
-    for (let i = 0; i < nsp; i++) {
-      const a = (i / nsp) * TAU, l = R * (0.006 + 0.012 * noise3(i * 0.31, t * 0.8, 0.5, 4));
-      ctx.moveTo(cx + Math.cos(a) * R * 0.995, cy + Math.sin(a) * R * 0.995); ctx.lineTo(cx + Math.cos(a) * (R + l), cy + Math.sin(a) * (R + l));
+    const b = big(w, h);
+    if (uv) {
+      const pv = planetView(s, "sv", w, h, cx, cy, R, { tilt: SUN_TILT, pitch: SUN_PITCH, halo: 0.025 }, 260);
+      ctx.drawImage(pv.view.draw(bodyTex("sunuv", b), BODIES.sunuv, { rot, L: [0, 0, 1], palette: Lk.pal, gain: Lk.gain, tint: [255, 140, 40] }), 0, 0, w, h);
+    } else {
+      const pv = planetView(s, "sv", w, h, cx, cy, R, { tilt: SUN_TILT, pitch: SUN_PITCH, halo: 0.03 }, 200);
+      ctx.drawImage(pv.view.draw(bodyTex("sun", b), BODIES.sun, { rot, L: [0, 0, 1], tint: Lk.disc, exposure: 1.12 }), 0, 0, w, h);
+      ctx.globalAlpha = 0.3 + 0.1 * Math.sin(t * 0.7);
+      ctx.drawImage(pv.view.draw(bodyTex("sun2", b), BODIES.sun2, { rot: rot * 1.4 + Math.sin(t * 0.13) * 0.02, L: [0, 0, 1], tint: Lk.disc, exposure: 1.12 }), 0, 0, w, h);
+      ctx.globalAlpha = 1;
     }
-    ctx.stroke(); ctx.restore();
-    // a flare: a brightening on the disc, a white-light flash and an expanding shock
-    if (s.flare) {
-      const e = (t - s.flare.t0) / s.flare.dur;
-      if (e > 1) { s.flare = null; s.erupt = null; }
-      else {
-        const fx = cx + Math.cos(s.flare.a) * R * s.flare.r, fy = cy + Math.sin(s.flare.a) * R * s.flare.r;
-        const I = e < 0.08 ? e / 0.08 : Math.exp(-(e - 0.08) * 5);
-        ctx.save(); ctx.globalCompositeOperation = "lighter";
-        ctx.globalAlpha = I; ctx.drawImage(glow("#ffffff"), fx - R * 0.25, fy - R * 0.25, R * 0.5, R * 0.5);
-        ctx.globalAlpha = I * 0.5; ctx.drawImage(glow("#fff6d8"), fx - R * 0.8, fy - R * 0.8, R * 1.6, R * 1.6);
-        ctx.globalAlpha = I * 0.12; ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
-        // coronal mass ejection: a bright expanding front leaving the limb
-        const ce = clamp((e - 0.1) / 0.9, 0, 1);
-        if (ce > 0) {
-          const rr = R * (1.05 + ce * 2.4), a = s.flare.a;
-          ctx.globalAlpha = (1 - ce) * 0.6; ctx.strokeStyle = T.corona; ctx.lineWidth = R * 0.05 * (1 - ce * 0.5);
-          ctx.beginPath(); ctx.arc(cx + Math.cos(a) * R * ce * 1.2, cy + Math.sin(a) * R * ce * 1.2, rr * 0.55, a - 1, a + 1); ctx.stroke();
-          ctx.lineWidth = R * 0.15; ctx.globalAlpha = (1 - ce) * 0.15; ctx.stroke();
+
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    if (uv) {
+      // the limb: a bright rim and a forest of spicules
+      ctx.strokeStyle = palColor(Lk.pal, 0.95); ctx.globalAlpha = 0.45; ctx.lineWidth = Math.max(1, R * 0.008);
+      ctx.beginPath(); ctx.arc(cx, cy, R * 1.002, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = palColor(Lk.pal, 0.7); ctx.lineWidth = Math.max(0.5, R * 0.004); ctx.globalAlpha = 0.25; ctx.beginPath();
+      const nsp = Math.round(Math.min(720, R * 4));
+      for (let i = 0; i < nsp; i++) {
+        const a = (i / nsp) * TAU + 0.002 * Math.sin(i * 1.7), l = R * (0.008 + 0.022 * noise3(i * 0.37, t * 0.6, 0.5, 4) ** 2);
+        ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.lineTo(cx + Math.cos(a) * (R + l), cy + Math.sin(a) * (R + l));
+      }
+      ctx.stroke();
+      // coronal loops: hidden where they pass behind the disc
+      if (p.loops > 0) {
+        const hot = s.flare ? s.flare.ar : -1;
+        ctx.lineCap = "round"; ctx.strokeStyle = Lk.loop;
+        for (const Lp of SUN_LOOPS) {
+          const boost = Lp.ar === hot ? 1 + 5 * flareI : 1, flick = 0.75 + 0.25 * Math.sin(t * 0.7 + Lp.ph);
+          ctx.lineWidth = Math.max(0.5, R * 0.0035 * Lp.w); ctx.globalAlpha = Math.min(1, Lk.loopA * p.loops * boost * flick);
+          ctx.beginPath(); let pen = false;
+          for (let i = 0; i <= 24; i++) {
+            const f = i / 24, a1 = 1 - f, hgt = 1 + Lp.h * Math.sin(Math.PI * f);
+            let bx = Lp.F1[0] * a1 + Lp.F2[0] * f, by = Lp.F1[1] * a1 + Lp.F2[1] * f, bz = Lp.F1[2] * a1 + Lp.F2[2] * f;
+            const bl = Math.hypot(bx, by, bz) / hgt; bx /= bl; by /= bl; bz /= bl;
+            const v = sunToView(ax, [bx, by, bz], rot), seen = v[2] >= 0 || v[0] * v[0] + v[1] * v[1] > 1;
+            const X = cx + v[0] * R, Y = cy - v[1] * R;
+            if (seen) { pen ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); pen = true; } else pen = false;
+          }
+          ctx.stroke();
         }
-        ctx.restore();
+      }
+      // small brightenings flickering in the active regions
+      if (Math.random() < dt * 6 * p.activity) { const i = (Math.random() * SUN_AR.length) | 0, A = SUN_AR[i]; s.sparks.push({ c: unit(A.lat + (Math.random() - 0.5) * A.r * 1.2, A.lon + (Math.random() - 0.5) * A.r * 1.2), t0: t, life: rnd(2, 0.5), size: rnd(1, 0.4) }); }
+      s.sparks = s.sparks.filter((q) => t - q.t0 < q.life);
+      for (const q of s.sparks) {
+        const v = sunToView(ax, q.c, rot); if (v[2] < 0.05) continue;
+        const e = (t - q.t0) / q.life, k = Math.sin(e * Math.PI), r = R * 0.025 * q.size;
+        ctx.globalAlpha = k * 0.6; ctx.drawImage(glow(palColor(Lk.pal, 1.3), 32, 0.25), cx + v[0] * R - r, cy - v[1] * R - r, r * 2, r * 2);
+      }
+    } else {
+      ctx.strokeStyle = Lk.chrom; ctx.globalAlpha = 0.22; ctx.lineWidth = Math.max(1, R * 0.012);
+      ctx.beginPath(); ctx.arc(cx, cy, R * 1.003, 0, TAU); ctx.stroke();
+    }
+    // the flare itself: a blinding knot in the active region
+    if (s.flare && flareI > 0.01) {
+      const v = arView[s.flare.ar];
+      if (v[2] > 0) {
+        const X = cx + v[0] * R, Y = cy - v[1] * R, r = R * (0.06 + 0.1 * flareI);
+        ctx.globalAlpha = flareI; ctx.drawImage(glow("#ffffff", 64, 0.15), X - r, Y - r, r * 2, r * 2);
+        ctx.globalAlpha = flareI * 0.4; ctx.drawImage(glow(uv ? palColor(Lk.pal, 1) : "#fff6d8", 64, 0.2), X - r * 3, Y - r * 3, r * 6, r * 6);
       }
     }
-  },
-};
-
-// ================================================================== total solar eclipse
-// One cycle: first contact, the crescent sun, Baily's beads, the diamond ring, totality
-// with the corona and pink prominences, the second diamond ring, then the egress.
-function coronaCanvas(R, color) {
-  const size = Math.ceil(R * 7), c = document.createElement("canvas"); c.width = c.height = size;
-  const g = c.getContext("2d"), cx = size / 2, rng = seeded(12), [r, gg, b] = hexToRgb(color);
-  g.globalCompositeOperation = "lighter";
-  const gr = g.createRadialGradient(cx, cx, R, cx, cx, R * 3.3);
-  gr.addColorStop(0, `rgba(${r},${gg},${b},0.85)`); gr.addColorStop(0.04, `rgba(${r},${gg},${b},0.4)`); gr.addColorStop(0.18, `rgba(${r},${gg},${b},0.1)`); gr.addColorStop(1, `rgba(${r},${gg},${b},0)`);
-  g.fillStyle = gr; g.fillRect(0, 0, size, size);
-  const spr = streamerSprite(color);
-  // equatorial helmet streamers: long and broad; polar plumes: short, fine and many
-  for (let i = 0; i < 26; i++) {
-    const side = i % 2 ? 0 : Math.PI, a = side + (rng() - 0.5) * 1.1 + 0.15, len = R * (1.2 + rng() * 2.1), wd = R * (0.5 + rng() * 0.9);
-    g.save(); g.translate(cx, cx); g.rotate(a + Math.PI / 2); g.globalAlpha = 0.18 + rng() * 0.2; g.drawImage(spr, -wd / 2, -R * 0.95 - len, wd, len); g.restore();
-  }
-  for (let i = 0; i < 70; i++) {
-    const pole = i % 2 ? -Math.PI / 2 : Math.PI / 2, a = pole + (rng() - 0.5) * 1.3, len = R * (0.35 + rng() * 0.7), wd = R * (0.05 + rng() * 0.08);
-    g.save(); g.translate(cx, cx); g.rotate(a + Math.PI / 2); g.globalAlpha = 0.2 + rng() * 0.25; g.drawImage(spr, -wd / 2, -R * 0.98 - len, wd, len); g.restore();
-  }
-  for (let i = 0; i < 140; i++) {
-    const a = rng() * TAU, len = R * (0.15 + rng() * 0.5), wd = R * (0.04 + rng() * 0.12);
-    g.save(); g.translate(cx, cx); g.rotate(a); g.globalAlpha = 0.12 + rng() * 0.2; g.drawImage(spr, -wd / 2, -R * 0.98 - len, wd, len); g.restore();
-  }
-  return c;
-}
-// the Moon's limb is not smooth: mountains and valleys let the last sunlight through as beads
-const limb = (a) => 1 - 0.006 * (noise3(Math.cos(a) * 9, Math.sin(a) * 9, 0.5, 71) * 0.7 + noise3(Math.cos(a) * 31, Math.sin(a) * 31, 0.5, 72) * 0.3);
-
-SPACE.eclipse = {
-  label: "Total eclipse",
-  params: {
-    length: { type: "range", min: 15, max: 180, step: 1, default: 40, label: "Seconds per eclipse" },
-    totality: { type: "range", min: 0.1, max: 0.6, step: 0.01, default: 0.3, label: "Totality share" },
-    size: { type: "range", min: 0.2, max: 1, step: 0.01, default: 0.42, label: "Size" },
-    sky: { type: "select", options: ["day sky", "black"], default: "day sky", label: "Sky" },
-    horizon: { type: "select", options: ["hills", "none"], default: "hills", label: "Horizon" },
-  },
-  draw(ctx, w, h, t, dt, p, s, info) {
-    if (s.t0 === undefined) s.t0 = t;
-    const T = Math.max(5, info ? p.length : 14), u = (((t - s.t0) / T) % 1 + 1) % 1;
-    const R = Math.max(4, (Math.min(w, h) / 2) * p.size), Rm = R * 1.035, cx = w * 0.5, cy = h * 0.42;
-    // Moon position: slows through mid-eclipse so totality lasts its share of the cycle
-    const half = p.totality / 2, d = Math.abs(u - 0.5), sgn = u < 0.5 ? 1 : -1;
-    const off = d < half ? (d / half) * (Rm - R) * 0.9 : (Rm - R) * 0.9 + Math.pow((d - half) / (0.5 - half), 1.15) * (R + Rm) * 1.12;
-    const mx = cx + sgn * off * 0.94, my = cy + sgn * off * 0.34;
-    const sep = Math.hypot(mx - cx, my - cy);
-    // uncovered fraction of the disc (area of circle overlap), drives the sky
-    let cover = 0;
-    if (sep < R + Rm) {
-      if (sep <= Rm - R) cover = 1;
-      else {
-        const a1 = Math.acos(clamp((sep * sep + R * R - Rm * Rm) / (2 * sep * R), -1, 1)), a2 = Math.acos(clamp((sep * sep + Rm * Rm - R * R) / (2 * sep * Rm), -1, 1));
-        cover = (R * R * (a1 - Math.sin(2 * a1) / 2) + Rm * Rm * (a2 - Math.sin(2 * a2) / 2)) / (Math.PI * R * R);
-      }
-    }
-    const lit = 1 - cover, dayK = p.sky === "day sky" ? Math.pow(lit, 0.45) : 0, total = sep <= (Rm - R) * 0.999 ? 1 : 0;
-    // sky: daylight blue darkening to a deep twilight with a sunset glow all round the horizon
-    const top = [10 + 30 * dayK, 22 + 80 * dayK, 48 + 140 * dayK], bot = [30 + 80 * dayK, 40 + 120 * dayK, 70 + 140 * dayK];
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, `rgb(${top.map((v) => v * 0.9 | 0)})`); g.addColorStop(0.75, `rgb(${bot.map((v) => v * 0.9 | 0)})`);
-    const glowK = (1 - dayK) * (p.sky === "day sky" ? 1 : 0.5);
-    g.addColorStop(0.9, `rgb(${Math.min(255, bot[0] + 150 * glowK) | 0},${Math.min(255, bot[1] + 70 * glowK) | 0},${Math.min(255, bot[2] + 10 * glowK) | 0})`);
-    g.addColorStop(1, `rgb(${Math.min(255, bot[0] + 190 * glowK) | 0},${Math.min(255, bot[1] + 110 * glowK) | 0},${bot[2] | 0})`);
-    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-    // stars and planets come out in the darkness
-    const starK = smooth(0.25, 0.02, dayK) * (p.sky === "day sky" ? 1 : 1);
-    if (starK > 0.01) {
-      starfield(ctx, w, h * 0.85, t, s, { density: 0.25, seed: 51, bright: starK * 0.9 });
-      ctx.globalCompositeOperation = "lighter";
-      for (const [x, y, r, col] of [[0.2, 0.62, 2.4, "#fff8e8"], [0.82, 0.18, 1.6, "#ffe9c8"], [0.66, 0.7, 1.1, "#ffd0a8"]]) { const rr = r * Math.max(1, Math.min(w, h) / 300); ctx.globalAlpha = starK; ctx.drawImage(glow(col), w * x - rr * 4, h * y - rr * 4, rr * 8, rr * 8); }
-      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
-    }
-    // the corona and prominences, visible in totality and fading in just around it
-    const coronaK = smooth(0.05, 0.004, lit);
-    if (coronaK > 0) {
-      if (!s.cor || s.corR !== Math.round(R)) { s.corR = Math.round(R); s.cor = coronaCanvas(R, "#f4f1ff"); s.proms = makeProminences(seeded(3), 6); }
-      ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = coronaK * 0.75;
-      ctx.translate(cx, cy); ctx.rotate(0.35); ctx.drawImage(s.cor, -s.cor.width / 2, -s.cor.height / 2); ctx.restore();
-      prominences(ctx, cx, cy, R, t, s.proms, "#ff3f6a", coronaK * 0.9);
-    }
-    // the photosphere (whatever the Moon doesn't hide)
-    if (lit > 0) {
-      ctx.save();
-      const sg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-      sg.addColorStop(0, "#fffdf6"); sg.addColorStop(0.7, "#fff6e0"); sg.addColorStop(0.93, "#ffe2b0"); sg.addColorStop(1, "#ffc888");
-      ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
-      ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Math.min(1, lit * 3) * (0.5 + 0.5 * dayK);
-      ctx.drawImage(glow("#fff4dc"), cx - R * 3, cy - R * 3, R * 6, R * 6);
-      ctx.restore();
-    }
-    // the Moon, with a mountainous limb. Its night side is lit only by a faint sky, so
-    // against the daylight sky it is all but invisible: you see it only where it bites
-    // into the Sun, plus a slight darkening of the sky around that.
-    const moonPath = () => { ctx.beginPath(); for (let i = 0; i <= 360; i++) { const a = (i / 360) * TAU, r = Rm * limb(a); i ? ctx.lineTo(mx + Math.cos(a) * r, my + Math.sin(a) * r) : ctx.moveTo(mx + Math.cos(a) * r, my + Math.sin(a) * r); } };
-    ctx.save();
-    if (!total) { ctx.beginPath(); ctx.arc(cx, cy, R * 1.004, 0, TAU); ctx.clip(); }
-    ctx.fillStyle = "#020306"; moonPath(); ctx.fill();
     ctx.restore();
-    if (!total) { ctx.globalAlpha = 0.02 + 0.08 * (1 - dayK); ctx.fillStyle = "#000"; moonPath(); ctx.fill(); ctx.globalAlpha = 1; }
-    if (total) { ctx.globalAlpha = 0.06; ctx.drawImage(glow("#7d8fb0"), mx - Rm, my - Rm, Rm * 2, Rm * 2); ctx.globalAlpha = 1; } // earthshine
-    // Baily's beads and the diamond ring: sunlight through lunar valleys
-    if (lit > 0 && lit < 0.02) {
-      const beads = [];
-      for (let i = 0; i < 720; i++) {
-        const a = (i / 720) * TAU, r = Rm * limb(a), x = mx + Math.cos(a) * r, y = my + Math.sin(a) * r, inside = R - Math.hypot(x - cx, y - cy);
-        if (inside > 0) beads.push([x, y, inside]);
-      }
-      ctx.save(); ctx.globalCompositeOperation = "lighter";
-      let best = null;
-      for (const [x, y, k] of beads) { const r = R * (0.03 + Math.min(0.06, (k / R) * 6)); ctx.globalAlpha = 0.6; ctx.drawImage(glow("#fffaf0"), x - r * 2, y - r * 2, r * 4, r * 4); if (!best || k > best[2]) best = [x, y, k]; }
-      if (best) {
-        const ring = smooth(0.02, 0.0005, lit) * smooth(0, 0.0012, lit);
-        const r = R * (0.25 + 0.5 * ring);
-        ctx.globalAlpha = 0.9; ctx.drawImage(glow("#ffffff"), best[0] - r, best[1] - r, r * 2, r * 2);
-        drawSpikes(ctx, best[0], best[1], R * (0.5 + ring * 1.2), "#ffffff", 0.6 + ring * 0.4, "jwst");
-        ctx.globalAlpha = 0.35 * ring; ctx.lineWidth = R * 0.02; ctx.strokeStyle = "#fff3e8";
-        ctx.beginPath(); ctx.arc(cx, cy, R * 1.01, 0, TAU); ctx.stroke();
-      }
-      ctx.restore();
-    }
-    // a black horizon so the sky glow has something to sit on
-    if (p.horizon === "hills") {
-      ctx.fillStyle = "#000";
-      ctx.beginPath(); ctx.moveTo(0, h);
-      for (let x = 0; x <= w; x += Math.max(2, w / 120)) ctx.lineTo(x, h * (0.9 - 0.05 * noise3(x / w * 4, 0.5, 0.5, 81) - 0.02 * noise3(x / w * 16, 0.5, 0.5, 82)));
-      ctx.lineTo(w, h); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
   },
 };
 
@@ -528,7 +438,7 @@ const orbitR = (a) => 0.11 + 0.89 * (Math.sqrt(a) - Math.sqrt(0.387)) / (Math.sq
 SPACE.solarsystem = {
   label: "Solar System",
   params: {
-    speed: { type: "range", min: 0, max: 5, step: 0.05, default: 1, label: "Speed" },
+    speed: { type: "range", min: 0, max: 10, step: 0.05, default: 1, label: "Earth years per minute" },
     tilt: { type: "range", min: 0, max: 85, step: 1, default: 64, label: "View tilt" },
     sizes: { type: "range", min: 0.4, max: 3, step: 0.05, default: 1, label: "Planet size" },
     labels: { type: "select", options: ["labels", "no labels"], default: "labels", label: "Names" },
@@ -540,7 +450,9 @@ SPACE.solarsystem = {
     spaceBg(ctx, w, h, t, s, p.sky, { density: 0.6, seed: 71 });
     const ci = Math.cos(p.tilt * RAD), cx = w / 2, cy = h / 2;
     const S = Math.min(w * 0.47, (h * 0.45) / Math.max(0.12, ci)), u = Math.max(0.6, Math.min(w, h) / 110) * p.sizes;
-    const yrs = t * p.speed / 12; // one Earth year every 12 seconds at speed 1
+    // one clock for everything, advanced by the speed so moving the slider never jumps
+    s.yrs = (s.yrs ?? 0) + (Math.min(dt, 0.1) * p.speed) / 60;
+    const yrs = s.yrs;
     const pos = (r, ang) => [cx + Math.cos(ang) * r * S, cy + Math.sin(ang) * r * S * ci, Math.sin(ang)];
     // orbits and trails
     if (p.orbits !== "none") {
@@ -557,7 +469,7 @@ SPACE.solarsystem = {
     const items = [];
     for (const [name, a, per, sz, col, kind] of ORBITS) {
       const ang = (yrs / per) * TAU + a * 7, [x, y, z] = pos(orbitR(a), ang);
-      items.push({ z, draw: () => planetDot(ctx, x, y, sz * u, col, kind, cx, cy, t, ci, name, p.labels === "labels" && Math.min(w, h) > 150 ? u : 0) });
+      items.push({ z, draw: () => planetDot(ctx, x, y, sz * u, col, kind, cx, cy, yrs, ci, name, p.labels === "labels" && Math.min(w, h) > 150 ? u : 0) });
     }
     if (p.extras !== "none") {
       if (!s.belt) { const r = seeded(8); s.belt = Array.from({ length: 900 }, () => { const a = 2.15 + r() * 1.2; return { a, ph: r() * TAU, rr: orbitR(a) + (r() - 0.5) * 0.012, b: 0.3 + r() * 0.7 }; }); }
@@ -604,7 +516,9 @@ const BANDS = {
   jupiter: ["#fff", "#c79a74", "#fff", "#b07a54", "#fff", "#e0c8a8", "#fff"],
   saturn: ["#fff", "#e9dbb8", "#fff", "#d8c18c", "#fff"],
 };
-function planetDot(ctx, x, y, r, col, kind, sx, sy, t, ci, name, labelU) {
+// yrs: the orrery clock in Earth years. Moons run slower than real (Io would lap
+// Jupiter 200 times a year) but keep their order and ratios.
+function planetDot(ctx, x, y, r, col, kind, sx, sy, yrs, ci, name, labelU) {
   const lx = sx - x, ly = sy - y;
   const ring = kind === "saturn" || kind === "uranus";
   const rx = r * (kind === "uranus" ? 0.5 : 2.3), ry = kind === "uranus" ? r * 2 : r * 2.3 * Math.max(0.12, ci * 0.6 + 0.1);
@@ -615,81 +529,16 @@ function planetDot(ctx, x, y, r, col, kind, sx, sy, t, ci, name, labelU) {
   if (kind === "earth") {
     ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.clip(); ctx.globalAlpha = 0.6; ctx.fillStyle = "#4f8a3a";
     ctx.beginPath(); ctx.ellipse(x - r * 0.3, y - r * 0.1, r * 0.35, r * 0.55, 0.4, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(x + r * 0.4, y + r * 0.2, r * 0.3, r * 0.4, -0.3, 0, TAU); ctx.fill(); ctx.restore();
-    const ma = t * 1.3, mxp = x + Math.cos(ma) * r * 2.6, myp = y + Math.sin(ma) * r * 2.6 * Math.max(0.2, ci);
+    const ma = yrs * TAU * 13.4, mxp = x + Math.cos(ma) * r * 2.6, myp = y + Math.sin(ma) * r * 2.6 * Math.max(0.2, ci);
     miniBody(ctx, mxp, myp, Math.max(0.6, r * 0.3), "#cfcac0", sx - mxp, sy - myp, 0.2);
   }
-  if (kind === "jupiter") for (let i = 0; i < 4; i++) { const a = t * (2.2 / (i + 1)) + i * 1.7, d = r * (1.6 + i * 0.55); ctx.fillStyle = ["#f0d36a", "#e8dcc6", "#b0a28c", "#7a6f62"][i]; ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * Math.max(0.15, ci), Math.max(0.5, r * 0.12), 0, TAU); ctx.fill(); }
+  if (kind === "jupiter") for (let i = 0; i < 4; i++) { const a = yrs * TAU * [20, 10, 5, 2.2][i] + i * 1.7, d = r * (1.6 + i * 0.55); ctx.fillStyle = ["#f0d36a", "#e8dcc6", "#b0a28c", "#7a6f62"][i]; ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * Math.max(0.15, ci), Math.max(0.5, r * 0.12), 0, TAU); ctx.fill(); }
   if (ring) ringArc(0, Math.PI);
   if (labelU) {
     ctx.font = `${Math.max(8, labelU * 1.7) | 0}px system-ui, sans-serif`; ctx.fillStyle = "rgba(200,215,240,0.75)"; ctx.textAlign = "center";
     ctx.fillText(name, x, y + r + (ring ? ry * 0.6 : 0) + labelU * 2.2);
   }
 }
-
-// ================================================================== comet
-// Emit and age the comet's particles (positions are in tail units along and across).
-function cometStep(s, dt, p) {
-  // dust leaves slowly and is pushed into a broad curved fan; ions stream straight out
-  const nd = Math.round(110 * dt + Math.random()), ni = Math.round(120 * dt + Math.random());
-  for (let i = 0; i < nd; i++) s.dust.push({ u: 0, v: rnd(0.035, -0.035), vu: rnd(0.08, 0.02), beta: rnd(1, 0.15), age: 0, life: rnd(10, 6), b: rnd(1, 0.4) });
-  if (p.ion === "dust & ion") for (let i = 0; i < ni; i++) s.ions.push({ u: 0, v: rnd(0.008, -0.008) + (Math.random() < 0.4 ? rnd(0.05, -0.05) : 0), ph: rnd(TAU), age: 0, life: rnd(3.5, 2), b: rnd(1, 0.3) });
-  for (const q of s.dust) { q.age += dt; q.vu += q.beta * 0.04 * dt; q.u += q.vu * dt; }
-  for (const q of s.ions) { q.age += dt; q.u = q.age * 0.42; }
-  s.dust = s.dust.filter((q) => q.age < q.life).slice(-2200);
-  s.ions = s.ions.filter((q) => q.age < q.life).slice(-900);
-}
-SPACE.comet = {
-  label: "Comet",
-  params: {
-    x: { type: "range", min: 0, max: 1, step: 0.01, default: 0.7, label: "Head across" },
-    y: { type: "range", min: 0, max: 1, step: 0.01, default: 0.35, label: "Head down" },
-    angle: { type: "range", min: -180, max: 180, step: 1, default: -160, label: "Tail direction" },
-    length: { type: "range", min: 0.2, max: 2, step: 0.05, default: 1, label: "Tail length" },
-    ion: { type: "select", options: ["dust & ion", "dust only"], default: "dust & ion", label: "Tails" },
-    coma: { type: "color", default: "#7dffb0", label: "Coma" },
-    drift: { type: "range", min: 0, max: 2, step: 0.05, default: 0.4, label: "Star drift" },
-    sky: SKY,
-  },
-  draw(ctx, w, h, t, dt, p, s) {
-    dt = Math.min(dt, 0.05);
-    // stars drift past slowly, as if tracking the comet across the sky
-    if (p.sky === "stars") {
-      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
-      s.sx = ((s.sx || 0) + dt * p.drift * w * 0.004) % w;
-      ctx.save(); ctx.translate(-s.sx, 0); starfield(ctx, w, h, t, s, { density: 0.9, seed: 91 }); ctx.translate(w, 0); starfield(ctx, w, h, t, s, { density: 0.9, seed: 91 }); ctx.restore();
-    } else spaceBg(ctx, w, h, t, s, p.sky);
-    const m = Math.min(w, h), hx = p.x * w, hy = p.y * h, a = p.angle * RAD, dx = Math.cos(a), dy = Math.sin(a);
-    const nx = -dy, ny = dx, L = m * 0.9 * p.length;
-    // start with a fully grown tail rather than watching it build for ten seconds
-    if (!s.dust) { s.dust = []; s.ions = []; for (let i = 0; i < 300; i++) cometStep(s, 1 / 30, p); }
-    cometStep(s, dt, p);
-    ctx.save(); ctx.globalCompositeOperation = "lighter";
-    const ds = glow("#fff1d0", 32, 0.3), is = glow("#7fb6ff", 32, 0.3);
-    for (const q of s.dust) {
-      const lag = q.u * q.u * (1 - q.beta) * 0.5; // heavy grains (low beta) lag behind and curve the tail
-      const x = hx + (dx * q.u + nx * (q.v * (0.4 + q.u * 1.4) + lag)) * L, y = hy + (dy * q.u + ny * (q.v * (0.4 + q.u * 1.4) + lag)) * L;
-      const r = m * (0.01 + q.u * 0.08), al = (1 - (q.age / q.life) ** 2) * 0.085 * q.b * Math.min(1, q.age * 3);
-      ctx.globalAlpha = al; ctx.drawImage(ds, x - r, y - r, r * 2, r * 2);
-    }
-    for (const q of s.ions) {
-      const wob = Math.sin(q.u * 9 - t * 2 + q.ph) * 0.012 * q.u; // rippling in the solar wind
-      const x = hx + (dx * q.u + nx * (q.v * (0.3 + q.u) + wob)) * L * 1.1, y = hy + (dy * q.u + ny * (q.v * (0.3 + q.u) + wob)) * L * 1.1;
-      const r = m * (0.004 + q.u * 0.014), al = (1 - q.age / q.life) * 0.3 * q.b;
-      ctx.globalAlpha = al; ctx.drawImage(is, x - r * 2.5, y - r, r * 5, r * 2);
-    }
-    // coma and nucleus, with sunward jets rotating as the nucleus spins
-    const cr = m * 0.07;
-    ctx.globalAlpha = 0.55; ctx.drawImage(glow(p.coma, 64, 0.15), hx - cr * 2, hy - cr * 2, cr * 4, cr * 4);
-    ctx.globalAlpha = 0.9; ctx.drawImage(glow("#ffffff", 64, 0.1), hx - cr * 0.5, hy - cr * 0.5, cr, cr);
-    // jets of gas toward the Sun, swinging as the nucleus turns
-    for (let j = 0; j < 3; j++) {
-      const ja = a + Math.PI + Math.sin(t * 0.5 + j * 2.1) * 0.6;
-      ctx.save(); ctx.translate(hx + Math.cos(ja) * cr * 0.35, hy + Math.sin(ja) * cr * 0.35); ctx.rotate(ja);
-      ctx.globalAlpha = 0.3; ctx.drawImage(glow("#f4fff8", 32, 0.2), -cr * 0.4, -cr * 0.1, cr * 0.8, cr * 0.2); ctx.restore();
-    }
-    ctx.restore();
-  },
-};
 
 // ================================================================== rocket launch
 // Countdown under floodlights with venting vapour, ignition and the exhaust cloud

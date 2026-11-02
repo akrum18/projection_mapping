@@ -5,8 +5,8 @@ space shows. Runs in your browser from a local Python server. Map videos,
 images, or built-in generative effects onto real objects with corner-pin
 perspective warping: fire, lightning, glowing eyes, fog, ghosts and a shadow
 figure for Halloween; snowfall, string lights, candy canes, icicles, a Christmas
-tree and Santa's sleigh for Christmas; planets, the Sun, eclipses, galaxies,
-nebulae, a black hole and a rocket launch for space. Trigger jump scares from
+tree and Santa's sleigh for Christmas; planets, the Sun, galaxies, the Milky
+Way, a black hole and a rocket launch for space. Trigger jump scares from
 the keyboard or your phone, and keep every show in one project as separate
 scenes.
 
@@ -232,13 +232,13 @@ two-storey colonial, with four scenes:
   roofline and porch roof, plus candy-cane red and white bulbs on the trim.
 - **Halloween:** The Watcher (below).
 - **Space:**
-  - the whole house under a starry sky, with the odd shooting star and fireball;
+  - the whole house under a starry sky, with the odd shooting star;
   - every window a porthole onto somewhere different: Saturn, Mars and a black
     hole upstairs, Earth from orbit and a spiral galaxy downstairs, with the
     window trim glowing cool white like lit porthole rims;
   - Earth and the Moon (going through its phases) in the peppermint spots;
-  - the Sun on the front door, winter constellations on the siding band, a
-    comet streaming across the upper wall, and a tree full of twinkling stars.
+  - the Sun on the front door as NASA's SDO sees it, winter constellations on
+    the siding band, and a tree full of twinkling stars.
 
 The Christmas show cascades over about 24 seconds:
 1. The trim lights switch to a rainbow chase.
@@ -248,9 +248,8 @@ The Christmas show cascades over about 24 seconds:
    rewrites and the tree sparkles.
 
 The Space show runs about 25 seconds: twin rockets on the surfaces beside the
-door count down, ignite and lift off on columns of exhaust, then the whole
-house jumps to warp: stars streak outward, a flash, the hyperspace tunnel, and
-the stars slow back to normal around the planets in the windows.
+door count down, ignite and lift off on columns of exhaust, and as they clear
+the house the sky over it fills with shooting stars.
 
 Load it with **Import JSON**, add your house photo, then line each surface up
 with your own windows and door: drag it, then use Warp for the corners.
@@ -298,26 +297,21 @@ firelight that flickers across the surround.
 
 ## Space
 
-Fourteen astronomy effects (the Space filter also includes Northern lights and
+Nine astronomy effects (the Space filter also includes Northern lights and
 Twinkling stars). Planets, moons and the Sun are drawn pixel by pixel as lit,
 rotating globes, not flat pictures, so they read as real spheres on a wall.
 
 | Effect | What it shows | Good on |
 | --- | --- | --- |
 | **Planet** | Earth, Moon, Mars, Jupiter, Saturn, Venus, Mercury, Uranus, Neptune, Pluto or a lava world, turning, with moons | Round windows, garage doors, any square-ish area |
-| **The Sun** | Boiling granulation, sunspots, limb darkening, prominences, coronal streamers and occasional flares | A big wall or the garage door |
-| **Total eclipse** | The Moon crosses the Sun: crescent, Baily's beads, diamond ring, then totality with the corona and pink prominences while the sky darkens and stars come out | Big areas. Also a great show moment |
+| **The Sun** | As NASA's Solar Dynamics Observatory sees it in ultraviolet (orange 304 Å or gold 171 Å): the bright magnetic network, blazing active regions, dark filaments, glowing loops and prominences over the limb, and flares that erupt from the active regions. Also plain visible light | A big wall, the garage door, the front door |
 | **Earth from orbit** | The curved limb with its thin blue atmosphere, then an orbital sunset, city lights, lightning in storms, airglow and aurora, and a sunrise over the limb | Wide walls, or a round window with Window: porthole |
-| **Solar System** | An orrery: all eight planets at their real relative speeds, the asteroid belt and a comet whipping round the Sun | Big walls |
-| **Comet** | Curved dust tail, straight blue ion tail, green coma and jets | Upper walls, roof gables |
+| **Solar System** | An orrery: all eight planets at their real relative speeds (one Earth year a minute by default), the asteroid belt and a comet whipping round the Sun | Big walls |
 | **Rocket launch** | Countdown under floodlights, ignition, exhaust clouds, liftoff past the swinging arms, staging and the upper-stage plume. Sky: none lights only the rocket, flame and smoke, for siding | Tall columns, chimneys, tall windows |
 | **Milky Way sky** | The Milky Way with dust lanes and the bright core, twinkling stars, shooting stars, satellites (one flares), an aircraft, and a tree line | Wide areas, the whole house |
 | **Constellations** | Real star positions. Lines draw in one constellation at a time with names, then an asterism (Winter Hexagon, Summer Triangle...). Skies: winter, spring, summer, the north (pole star) and Scorpius | Garage doors, big walls |
-| **Meteor shower** | Meteors fly from a radiant, with lingering glowing trains and fireballs that break up. "Storm" is a downpour | Anywhere. Storm makes a good show moment |
-| **Nebula** | Dust pillars, an emission nebula, a planetary nebula or a supernova remnant with a pulsar | Big walls |
 | **Spiral galaxy** | A turning spiral (or barred) galaxy with dust lanes, pink star-forming knots and occasional supernovae; tilt it to edge-on | Big walls, garage doors |
 | **Black hole** | A lensed accretion disc: the far side arches over the shadow, a photon ring, Doppler beaming, and background stars that smear into arcs | Big walls |
-| **Warp jump** | Star field that streaks into a hyperspace tunnel and drops back out. Also "cruise" and "tunnel" | The show moment on big surfaces |
 
 Notes:
 
@@ -330,10 +324,12 @@ Notes:
   polar caps; Jupiter the Great Red Spot and its moons' shadows; Saturn its
   rings with the Cassini division, ring shadows and the north polar hexagon;
   Pluto its heart. Jupiter's belts roll into eddies where opposing jets meet.
-- **The Sun** goes from white-hot at the centre to deep orange at the limb, as
-  real white-light images do; prominences are faint red threads.
-- **Eclipse:** the Moon is invisible against the daytime sky except where it
-  covers the Sun, as in reality.
+- **The Sun** in ultraviolet shows the chromosphere and corona, not the
+  surface: the network outlining supergranule cells, active regions over the
+  sunspot belts, filaments (prominences seen from above), a limb that
+  brightens rather than darkens, magnetic loops that arch over the limb, and
+  flares that flash in the active regions. Visible light shows the white-hot
+  photosphere with sunspots instead.
 - **Galaxy** is modelled as real ones are built: an exponential disc and a
   yellow bulge, blue spiral density waves with pink star-forming knots, and
   thin dust lanes along the inner edge of each arm.
@@ -350,11 +346,11 @@ Notes:
   softer version shows meanwhile), so picking a planet never freezes the page.
   Earth from orbit also builds an extra-detailed Earth, which takes about ten
   seconds on a typical laptop.
-- **Space starter** puts a rocket launch on tall columns, meteors on roof
-  lines, the Milky Way on long strips, galaxies, nebulae, a black hole, the
-  Solar System, Earth from orbit or the eclipse on big areas, and planets, the
-  Sun, a comet and constellations everywhere else. Its show: big areas jump to
-  warp, everything else bursts into a meteor storm.
+- **Space starter** puts a rocket launch on tall columns, stars on roof
+  lines, the Milky Way on long strips, a galaxy, the Sun, a black hole, the
+  Solar System or Earth from orbit on big areas, and planets and
+  constellations everywhere else. Its show: a rocket launches on every big
+  area.
 
 ## Christmas
 
