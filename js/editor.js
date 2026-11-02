@@ -155,7 +155,7 @@ function updateBars() {
   $("master").value = st.brightness ?? 1;
   $("masterVal").textContent = Math.round((st.brightness ?? 1) * 100) + "%";
   $("btnUndo").disabled = !canUndo(); $("btnRedo").disabled = !canRedo();
-  const word = currentScene()?.theme === "christmas" ? "SHOW" : "SCARE";
+  const word = ["christmas", "space"].includes(currentScene()?.theme) ? "SHOW" : "SCARE";
   $("scareLabel").textContent = word; $("fsScareLabel").textContent = word;
   $("autoLabel").textContent = st.autoShow ? `Auto: ${st.autoShow} min` : "Auto: off";
   $("btnAuto").setAttribute("aria-pressed", String(!!st.autoShow));

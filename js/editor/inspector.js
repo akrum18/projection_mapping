@@ -258,7 +258,7 @@ function lookTab(s, body) {
 }
 
 function scareTab(s, body) {
-  const word = currentScene()?.theme === "christmas" ? "SHOW" : "SCARE";
+  const word = ["christmas", "space"].includes(currentScene()?.theme) ? "SHOW" : "SCARE";
   body.appendChild(h("p", "medianote", `When ${word} fires (Space, the show bar, the phone remote or Auto), this surface switches to the clip below, plays it once, then goes back to its normal content. Give surfaces different "Start after" times to cascade the moment across the house.`));
   const choose = (spec) => { s.scare = { ...spec, duration: s.scare?.duration ?? 4, delay: s.scare?.delay ?? 0 }; commit(); render(); };
   const g = h("div", "tiles");
