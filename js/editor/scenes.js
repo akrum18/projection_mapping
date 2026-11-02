@@ -38,7 +38,7 @@ export function nextScene() {
 // Pick a sensible starter effect from each surface's shape and position.
 const STARTERS = {
   christmas: { tall: "candycane", roof: "icicles", wide: "lights", big: ["village", "fireplace", "aurora", "sleigh"], other: ["xmastree", "santawindow", "snowman", "wreath", "snowglobe", "ornaments", "gift", "snow"] },
-  halloween: { tall: "candle", roof: "blood", wide: "fog", big: ["fireplace", "lightning", "portal"], other: ["eyes", "silhouette", "ghost", "spiders", "fire"] },
+  halloween: { tall: "candle", roof: "blood", wide: "fog", big: ["fireplace", "lightning", "portal"], other: ["watcher", "eyes", "silhouette", "ghost", "spiders", "fire"] },
 };
 function starterLooks(kind) {
   const S = STARTERS[kind], out = app.state.output, n = { big: 0, other: 0 };

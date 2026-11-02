@@ -155,8 +155,8 @@ the house at night with the projection landing on it in each surface's own
 colour: what white trim, black shutters and a red door really do to the
 content.
 
-**Template.** `examples/christmas-house.json` is a complete show for a
-two-storey colonial: candles and trim lights on five windows, door-frame,
+**Template.** `examples/house-show.json` is a complete show for a
+two-storey colonial, with a Christmas scene and a Halloween scene. Christmas: candles and trim lights on five windows, door-frame,
 roofline, porch-roof and railing lights, candy-cane porch columns, a wrapped
 door around its wreath, lights on a spruce, a sleigh across the upper wall and
 lettering on the siding band. Its show cascades over about 24 seconds:
@@ -168,6 +168,32 @@ lettering on the siding band. Its show cascades over about 24 seconds:
 
 Load it with **Import JSON**, add your house photo, then line each surface up
 with your own windows and door: drag it, then use Warp for the corners.
+
+## The Watcher (Halloween)
+
+A haunting built from real light on the real house:
+
+1. Lightning flashes across the whole house.
+2. In the same instant the bulb in one room stutters on, as if the storm surged
+   the power. Through the closed blinds, someone is standing in the dark.
+3. Each surge they are closer: a blurred shape at the back of the room, then
+   nearer with the head tilted and long hair hanging.
+4. Then they are at the glass. In the dim, failing light, two hands slam against
+   the window and slowly drag down.
+
+- **The figure:** on the glass of one window (blinds or curtains closed), use
+  Light: room light, Figure: watcher.
+- **Other windows:** Light: room light, Figure: none. They stutter in step.
+- **Lightning:** one surface covering the whole frame (Position › Fill output),
+  Light: lightning, at the back. It lights house, lawn and trees evenly, like a
+  real flash. Per-surface flashes would light up rectangles.
+- **Timing:** "haunt" escalates over repeated storms (an empty flash, far,
+  closer, at the glass). "show" plays the whole sequence once in about 10 s;
+  use it as the scare. Everything is timed from the clock, so all surfaces
+  flash together.
+
+The template's Halloween scene is set up this way, with the Watcher in the
+upstairs right window.
 
 ## Fireplace (Halloween and Christmas)
 
@@ -263,9 +289,10 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `output.html`, `js/output.js` – projector output window.
 - `js/scene.js`, `js/renderer.js` – WebGL homography renderer and media/effect sources.
 - `js/effects.js` – built-in effects and theme tags. Add your own by adding an entry to `EFFECTS`.
+- `js/effects-halloween.js` – The Watcher (Halloween haunting with lightning).
 - `js/effects-house.js` – effects designed for real architecture (outline lights, window candle, wrapped door, tree lights, sleigh, lettering).
 - `js/effects-christmas.js`, `js/effects-fireplace.js`, `js/fx-util.js` – the Christmas pack, the fireplace, and helpers shared by effect packs.
-- `examples/christmas-house.json` – a complete Christmas show template for a two-storey house.
+- `examples/house-show.json` – a complete Christmas + Halloween show template for a two-storey house.
 - `js/editor/scenes.js` – scenes and the Christmas/Halloween starters.
 - `js/live.js` – live video sources (cameras, capture devices, window capture).
 - `media/` – your videos/images. `projects/` – saved projects.
