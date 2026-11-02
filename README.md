@@ -167,7 +167,7 @@ colour: what white trim, black shutters and a red door really do to the
 content.
 
 **Template.** `examples/house-show.json` is a complete show for a
-two-storey colonial, with three scenes:
+two-storey colonial, with four scenes:
 
 - **Christmas:**
   - every window has a candle, a wreath and trim lights;
@@ -180,6 +180,14 @@ two-storey colonial, with three scenes:
 - **Gingerbread house:** the same house with thick icing and candies on the
   roofline and porch roof, plus candy-cane red and white bulbs on the trim.
 - **Halloween:** The Watcher (below).
+- **Space:**
+  - the whole house under a starry sky, with the odd shooting star and fireball;
+  - every window a porthole onto somewhere different: Saturn, Mars and a black
+    hole upstairs, Earth from orbit and a spiral galaxy downstairs, with the
+    window trim glowing cool white like lit porthole rims;
+  - Earth and the Moon (going through its phases) in the peppermint spots;
+  - the Sun on the front door, winter constellations on the siding band, a
+    comet streaming across the upper wall, and a tree full of twinkling stars.
 
 The Christmas show cascades over about 24 seconds:
 1. The trim lights switch to a rainbow chase.
@@ -187,6 +195,11 @@ The Christmas show cascades over about 24 seconds:
 3. Each window bursts bright and its wreath sparkles as the sleigh passes.
 4. The door shines, the nutcrackers salute, the columns spin, the lettering
    rewrites and the tree sparkles.
+
+The Space show runs about 25 seconds: twin rockets on the surfaces beside the
+door count down, ignite and lift off on columns of exhaust, then the whole
+house jumps to warp: stars streak outward, a flash, the hyperspace tunnel, and
+the stars slow back to normal around the planets in the windows.
 
 Load it with **Import JSON**, add your house photo, then line each surface up
 with your own windows and door: drag it, then use Warp for the corners.
@@ -246,7 +259,7 @@ rotating globes, not flat pictures, so they read as real spheres on a wall.
 | **Earth from orbit** | The curved limb with its thin blue atmosphere, then an orbital sunset, city lights, lightning in storms, airglow and aurora, and a sunrise over the limb | Wide walls, or a round window with Window: porthole |
 | **Solar System** | An orrery: all eight planets at their real relative speeds, the asteroid belt and a comet whipping round the Sun | Big walls |
 | **Comet** | Curved dust tail, straight blue ion tail, green coma and jets | Upper walls, roof gables |
-| **Rocket launch** | Countdown under floodlights, ignition, exhaust clouds, liftoff past the swinging arms, staging and the upper-stage plume | Tall columns, chimneys, tall windows |
+| **Rocket launch** | Countdown under floodlights, ignition, exhaust clouds, liftoff past the swinging arms, staging and the upper-stage plume. Sky: none lights only the rocket, flame and smoke, for siding | Tall columns, chimneys, tall windows |
 | **Milky Way sky** | The Milky Way with dust lanes and the bright core, twinkling stars, shooting stars, satellites (one flares), an aircraft, and a tree line | Wide areas, the whole house |
 | **Constellations** | Real star positions. Lines draw in one constellation at a time with names, then an asterism (Winter Hexagon, Summer Triangle...). Skies: winter, spring, summer, the north (pole star) and Scorpius | Garage doors, big walls |
 | **Meteor shower** | Meteors fly from a radiant, with lingering glowing trains and fireballs that break up. "Storm" is a downpour | Anywhere. Storm makes a good show moment |
