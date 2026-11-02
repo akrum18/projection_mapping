@@ -53,6 +53,7 @@ export const PALETTES = {
   "red & green": ["#ff2d2d", "#19c35a"],
   "blue & white": ["#4da3ff", "#e8f4ff", "#7cc4ff"],
   rainbow: ["#ff3b30", "#ff9f0a", "#ffd60a", "#30d158", "#64d2ff", "#0a84ff", "#bf5af2"],
+  "candy cane": ["#ff2433", "#fff2ea"],
 };
 export const PALETTE_PARAM = { type: "select", options: Object.keys(PALETTES), default: "classic", label: "Colours" };
 
