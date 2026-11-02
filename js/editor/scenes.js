@@ -36,24 +36,33 @@ export function nextScene() {
 }
 
 // Pick a sensible starter effect from each surface's shape and position.
+// An entry is an effect name, or [effect, params] for a particular look.
 const STARTERS = {
   christmas: { tall: "candycane", roof: "icicles", wide: "lights", big: ["village", "fireplace", "aurora", "sleigh"], other: ["xmastree", "santawindow", "snowman", "wreath", "snowglobe", "ornaments", "gift", "snow"] },
   halloween: { tall: "candle", roof: "blood", wide: "fog", big: ["fireplace", "lightning", "portal"], other: ["watcher", "eyes", "silhouette", "ghost", "spiders", "fire"] },
+  space: {
+    tall: "launch", roof: "meteors", wide: ["milkyway", { horizon: "none" }],
+    big: ["galaxy", "nebula", "blackhole", "solarsystem", "orbit", "eclipse"],
+    other: ["planet", ["planet", { body: "saturn" }], ["planet", { body: "moon", sun: 95 }], "sun", ["planet", { body: "jupiter" }], "comet", ["planet", { body: "mars" }], "constellations", ["nebula", { style: "planetary" }], ["planet", { body: "neptune" }]],
+    // the show moment: big areas jump to warp, everything else gets a meteor storm
+    scare: { big: ["warp", { mode: "jump", length: 10 }], other: ["meteors", { mode: "storm" }], duration: 10 },
+  },
 };
+const pick = (e, kind) => { const [fx, over] = Array.isArray(e) ? e : [e, null]; return { type: "effect", effect: fx, params: { ...themedParams(fx, kind), ...(over || {}) } }; };
 function starterLooks(kind) {
   const S = STARTERS[kind], out = app.state.output, n = { big: 0, other: 0 };
   return app.state.surfaces.map((sf) => {
     const b = bbox(toPx(sf.corners, out));
     const ar = b.w / Math.max(1, b.h), area = (b.w * b.h) / (out.w * out.h);
-    let fx;
+    let fx, isBig = false;
     if (ar < 0.55) fx = S.tall;
     else if (ar > 3) fx = b.cy / out.h < 0.4 ? S.roof : S.wide;
-    else if (area > 0.2) fx = S.big[n.big++ % S.big.length];
+    else if (area > 0.2) { fx = S.big[n.big++ % S.big.length]; isBig = true; }
     else fx = S.other[n.other++ % S.other.length];
-    return {
-      content: { type: "effect", effect: fx, params: themedParams(fx, kind) },
-      scare: kind === "halloween" ? cloneState(sf.scare) : { type: "none", duration: 4 },
-    };
+    let scare = { type: "none", duration: 4 };
+    if (kind === "halloween") scare = cloneState(sf.scare);
+    else if (S.scare) scare = { ...pick(isBig ? S.scare.big : S.scare.other, kind), duration: S.scare.duration };
+    return { content: pick(fx, kind), scare };
   });
 }
 
@@ -63,13 +72,14 @@ function uniqueName(base) {
   for (let i = 2; ; i++) if (!names.has(`${base} ${i}`)) return `${base} ${i}`;
 }
 
-// kind: "christmas" | "halloween" | "copy" | "blank"
+// kind: "christmas" | "halloween" | "space" | "copy" | "blank"
 export function addScene(kind) {
   saveLooks();
-  const base = { christmas: "Christmas", halloween: "Halloween", copy: currentScene().name + " copy", blank: "New scene" }[kind];
+  const base = { christmas: "Christmas", halloween: "Halloween", space: "Space", copy: currentScene().name + " copy", blank: "New scene" }[kind];
   const sc = { id: uid(), name: uniqueName(base) };
-  if (kind === "christmas" || kind === "halloween") sc.theme = kind;
-  const looks = kind === "christmas" || kind === "halloween" ? starterLooks(kind) : null;
+  const themed = STARTERS[kind] ? kind : null;
+  if (themed) sc.theme = kind;
+  const looks = themed ? starterLooks(kind) : null;
   app.state.surfaces.forEach((sf, i) => { sf.looks[sc.id] = kind === "copy" ? look(sf) : kind === "blank" ? OFF() : looks[i]; });
   app.state.scenes.push(sc);
   switchScene(sc.id, { quiet: true });

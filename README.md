@@ -1,12 +1,14 @@
 # 🎃 Projector Mapper
 
-A small, dependency-free projection-mapping tool for Halloween and Christmas.
-Runs in your browser from a local Python server. Map videos, images, or
-built-in generative effects onto real objects with corner-pin perspective
-warping: fire, lightning, glowing eyes, fog, ghosts and a shadow figure for
-Halloween; snowfall, string lights, candy canes, icicles, a Christmas tree and
-Santa's sleigh for Christmas. Trigger jump scares from the keyboard or your
-phone, and keep both shows in one project as separate scenes.
+A small, dependency-free projection-mapping tool for Halloween, Christmas and
+space shows. Runs in your browser from a local Python server. Map videos,
+images, or built-in generative effects onto real objects with corner-pin
+perspective warping: fire, lightning, glowing eyes, fog, ghosts and a shadow
+figure for Halloween; snowfall, string lights, candy canes, icicles, a Christmas
+tree and Santa's sleigh for Christmas; planets, the Sun, eclipses, galaxies,
+nebulae, a black hole and a rocket launch for space. Trigger jump scares from
+the keyboard or your phone, and keep every show in one project as separate
+scenes.
 
 ## Quick start
 
@@ -49,11 +51,12 @@ python3 server.py          # prints the editor and phone-remote URLs
   scenes and Master brightness, kept apart from the editing tools.
 - **Scenes**: one mapped house, several shows. Surfaces and alignment are
   shared; each scene has its own content and scares. Use **+** in the show bar
-  to add a **Christmas starter** or **Halloween starter** (picks an effect for
-  every surface from its shape), copy the current scene, or start blank. Click
+  to add a **Christmas starter**, **Halloween starter** or **Space starter**
+  (picks an effect for every surface from its shape), copy the current scene,
+  or start blank. Click
   a scene to switch the whole house.
 - **Theme chips** above the effect tiles filter them: All, Halloween,
-  Christmas, Basics.
+  Christmas, Space, Basics.
 - **Fullscreen (F)**: hides all panels, leaving the stage and a small floating
   toolbar that fades when idle. Esc exits.
 - **Edit on wall**: with the projector window open, this draws the handles on
@@ -229,6 +232,66 @@ firelight that flickers across the surround.
 - Picked from the Halloween filter or the Halloween starter, it starts out
   haunted (green flames, dark stone).
 
+## Space
+
+Fourteen astronomy effects (the Space filter also includes Northern lights and
+Twinkling stars). Planets, moons and the Sun are drawn pixel by pixel as lit,
+rotating globes, not flat pictures, so they read as real spheres on a wall.
+
+| Effect | What it shows | Good on |
+| --- | --- | --- |
+| **Planet** | Earth, Moon, Mars, Jupiter, Saturn, Venus, Mercury, Uranus, Neptune, Pluto or a lava world, turning, with moons | Round windows, garage doors, any square-ish area |
+| **The Sun** | Boiling granulation, sunspots, limb darkening, prominences, coronal streamers and occasional flares | A big wall or the garage door |
+| **Total eclipse** | The Moon crosses the Sun: crescent, Baily's beads, diamond ring, then totality with the corona and pink prominences while the sky darkens and stars come out | Big areas. Also a great show moment |
+| **Earth from orbit** | The curved limb with its thin blue atmosphere, then an orbital sunset, city lights, lightning in storms, airglow and aurora, and a sunrise over the limb | Wide walls, or a round window with Window: porthole |
+| **Solar System** | An orrery: all eight planets at their real relative speeds, the asteroid belt and a comet whipping round the Sun | Big walls |
+| **Comet** | Curved dust tail, straight blue ion tail, green coma and jets | Upper walls, roof gables |
+| **Rocket launch** | Countdown under floodlights, ignition, exhaust clouds, liftoff past the swinging arms, staging and the upper-stage plume | Tall columns, chimneys, tall windows |
+| **Milky Way sky** | The Milky Way with dust lanes and the bright core, twinkling stars, shooting stars, satellites (one flares), an aircraft, and a tree line | Wide areas, the whole house |
+| **Constellations** | Real star positions. Lines draw in one constellation at a time with names, then an asterism (Winter Hexagon, Summer Triangle...). Skies: winter, spring, summer, the north (pole star) and Scorpius | Garage doors, big walls |
+| **Meteor shower** | Meteors fly from a radiant, with lingering glowing trains and fireballs that break up. "Storm" is a downpour | Anywhere. Storm makes a good show moment |
+| **Nebula** | Dust pillars, an emission nebula, a planetary nebula or a supernova remnant with a pulsar | Big walls |
+| **Spiral galaxy** | A turning spiral (or barred) galaxy with dust lanes, pink star-forming knots and occasional supernovae; tilt it to edge-on | Big walls, garage doors |
+| **Black hole** | A lensed accretion disc: the far side arches over the shadow, a photon ring, Doppler beaming, and background stars that smear into arcs | Big walls |
+| **Warp jump** | Star field that streaks into a hyperspace tunnel and drops back out. Also "cruise" and "tunnel" | The show moment on big surfaces |
+
+Notes:
+
+- **Real detail.** Earth has real coastlines, mountain ranges, deserts, ice
+  caps, swirling cloud systems with fields of small cumulus, clouds that cast
+  shadows on the ground (longest near sunset), a sun glint on the oceans and
+  city lights (including the Nile) that break into individual towns up close. The Moon has its real maria and
+  Tycho's and Copernicus's ray craters, and its full phase looks evenly bright
+  the way the real Moon does. Mars has Olympus Mons, Valles Marineris and its
+  polar caps; Jupiter the Great Red Spot and its moons' shadows; Saturn its
+  rings with the Cassini division, ring shadows and the north polar hexagon;
+  Pluto its heart. Jupiter's belts roll into eddies where opposing jets meet.
+- **The Sun** goes from white-hot at the centre to deep orange at the limb, as
+  real white-light images do; prominences are faint red threads.
+- **Eclipse:** the Moon is invisible against the daytime sky except where it
+  covers the Sun, as in reality.
+- **Galaxy** is modelled as real ones are built: an exponential disc and a
+  yellow bulge, blue spiral density waves with pink star-forming knots, and
+  thin dust lanes along the inner edge of each arm.
+- **Milky Way** is a river of countless faint stars with dark rifts, a warm
+  core and green airglow near the horizon.
+- **Constellations** include the Orion Nebula, the Andromeda Galaxy and the
+  Lagoon and Trifid nebulae. Each sky turns to whatever angle fills the
+  surface best, as the real sky turns through the night.
+- **Rocket launch** is framed like long-lens launch footage: the camera tracks
+  and pulls back, leaving a tall exhaust column lit orange by the flame.
+- **Sun angle** turns a planet from full to crescent; **Sunlight: cycle** runs
+  through the phases.
+- Full-size planet textures build in the background over a second or two (a
+  softer version shows meanwhile), so picking a planet never freezes the page.
+  Earth from orbit also builds an extra-detailed Earth, which takes about ten
+  seconds on a typical laptop.
+- **Space starter** puts a rocket launch on tall columns, meteors on roof
+  lines, the Milky Way on long strips, galaxies, nebulae, a black hole, the
+  Solar System, Earth from orbit or the eclipse on big areas, and planets, the
+  Sun, a comet and constellations everywhere else. Its show: big areas jump to
+  warp, everything else bursts into a meteor storm.
+
 ## Christmas
 
 Effects: Fireplace, the house effects and classic decor above (Peppermint
@@ -314,7 +377,8 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `js/effects-house.js` – effects designed for real architecture (outline lights, window candle, wrapped door, tree lights, sleigh, lettering).
 - `js/effects-decor.js` – classic Christmas decor (peppermint, window wreath, garland & bows, nutcracker, snowflakes, gingerbread icing).
 - `js/effects-christmas.js`, `js/effects-fireplace.js`, `js/fx-util.js` – the Christmas pack, the fireplace, and helpers shared by effect packs.
+- `js/effects-space.js`, `js/effects-deepspace.js`, `js/space-gfx.js` – the space pack (Solar System; night sky and deep space) and its renderer: noise, procedural planet textures with real geography, and the per-pixel sphere renderer.
 - `examples/house-show.json` – a complete show template for a two-storey house (Christmas, Gingerbread house and Halloween scenes).
-- `js/editor/scenes.js` – scenes and the Christmas/Halloween starters.
+- `js/editor/scenes.js` – scenes and the Christmas, Halloween and Space starters.
 - `js/live.js` – live video sources (cameras, capture devices, window capture).
 - `media/` – your videos/images. `projects/` – saved projects.
