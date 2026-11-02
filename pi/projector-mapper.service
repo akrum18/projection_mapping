@@ -1,0 +1,18 @@
+# systemd unit for the Projector Mapper server.
+# pi/install.sh fills in __USER__ and __DIR__ and installs this to
+# /etc/systemd/system/projector-mapper.service
+[Unit]
+Description=Projector Mapper server (projection mapping editor + relay)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__DIR__
+ExecStart=/usr/bin/python3 __DIR__/server.py --port __PORT__
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

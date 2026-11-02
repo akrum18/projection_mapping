@@ -92,6 +92,57 @@ Notes:
 - Anyone on your network can open these pages; run the server on a network
   you trust.
 
+## Raspberry Pi (or any spare PC) on the projector, edit from your phone
+
+The server does not have to run on the computer you edit from. Put it on a
+Raspberry Pi or old laptop plugged into the projector, and the Pi becomes a
+box that boots straight into the show while you edit from your phone:
+
+```
+phone (editor)  ──Wi‑Fi──▶  Pi: server.py ──localhost──▶  Pi: Chromium kiosk ──HDMI──▶ projector
+```
+
+Setup, once, on the Pi (Raspberry Pi OS with desktop, auto-login enabled):
+
+```bash
+sudo apt install -y git python3 chromium-browser   # 'chromium' on newer Pi OS
+git clone git@github.com:akrum18/projection_mapping.git
+cd projection_mapping
+bash pi/install.sh
+sudo reboot
+```
+
+`pi/install.sh` does three things:
+
+- Installs `pi/projector-mapper.service` so the server starts at boot
+  (`systemctl status projector-mapper` to check, `journalctl -u projector-mapper -e` for logs).
+- Adds a desktop autostart entry that runs `pi/kiosk.sh`: waits for the server,
+  then opens `output.html?remote&fs=1` fullscreen in Chromium. The `remote`
+  flag makes the projector window listen to the server relay from the start.
+- Turns off screen blanking so the projection never goes dark.
+
+Then on your phone, on the same Wi‑Fi, open **`http://<pi-ip>:8787/`** (the
+installer prints the address). That is the full editor: add surfaces, warp
+corners, pick effects, switch scenes, fire scares. Everything reaches the
+projector window through the server. Media you drop into the phone editor
+uploads to the Pi, and live video works too because the projector window is on
+the Pi's own localhost.
+
+Useful to know:
+
+- The server keeps the latest show, so close the phone whenever you like; the
+  projector keeps running. Reopen the editor and it picks the show back up.
+- Save projects (**Ctrl+S** / project menu) so they live on the Pi, not just in
+  the phone's browser.
+- To update: `git pull` on the Pi, then `sudo systemctl restart projector-mapper`
+  and reload the kiosk (Alt+F4 then it restarts at next login, or `ssh pi` and
+  run `pi/kiosk.sh &`).
+- `bash pi/install.sh --no-kiosk` installs only the service; `--uninstall` removes both.
+- Performance: effects are CPU-drawn, so a Pi 5 handles several surfaces
+  comfortably; a Pi 4 is fine for a handful but will stutter on the full
+  34-surface house show. A cheap mini PC has far more headroom.
+- As above, anyone on the network can open the pages, so use a Wi‑Fi you trust.
+
 ## Phone remote
 
 Click **Remote** in the top bar for the address (it uses your LAN IP). Open it
@@ -379,6 +430,7 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 ## Files
 
 - `server.py` – static server with HTTP range support, media listing, uploads, project save/load, and the network relay (phone remote, projector windows on other computers).
+- `pi/` – Raspberry Pi / dedicated projector box: `install.sh` (systemd service + Chromium kiosk autostart), `projector-mapper.service`, `kiosk.sh`.
 - `js/link.js` – editor ↔ projector messaging: BroadcastChannel on one computer, the server relay across computers.
 - `index.html`, `js/editor.js` – editor shell (top bar, show bar, fullscreen, keys, projects, uploads).
 - `js/editor/` – `store.js` (state, undo, events), `stage.js` (zoom/pan, preview, handles), `interact.js` (move/resize/rotate/warp + snapping), `layers.js`, `inspector.js`.
