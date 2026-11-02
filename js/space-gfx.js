@@ -286,12 +286,13 @@ function* earthTex(W, H) {
   yield* eachTexel(W, H, (k, x, y, z, lat, lon) => {
     const a = Math.abs(lat);
     // fractal coastline: the soft mask plus noise, thresholded
-    const cn = fbm3(x * 9, y * 9, z * 9, 3, 11) - 0.5;
+    const cn = fbm3(x * 9, y * 9, z * 9, W > 1500 ? 5 : 3, 11) - 0.5;
     // Antarctica: the coast sits near 67°S, pulled south by the Ross and Weddell seas
     const ross = ((lon + 175 + 540) % 360) - 180;
     const antarctic = lat < -60 ? smooth(0, 1, (-lat - (66.5 + 9 * Math.exp(-((ross / 22) ** 2)) + 8 * Math.exp(-(((lon + 45) / 18) ** 2)))) / 1.2) : 0;
     const v = Math.max(M.land[k], antarctic) + cn * 0.42;
-    const L = smooth(0.46, 0.54, v), wide = M.wide[k];
+    // a coast about a texel wide, so magnified it stays a smooth line rather than steps
+    const L = smooth(0.5 - 0.06 * (768 / W), 0.5 + 0.06 * (768 / W), v), wide = M.wide[k];
     const detail = fbm3(x * 22, y * 22, z * 22, 3, 5), d2 = fbm3(x * 5, y * 5, z * 5, 4, 9);
     // ocean
     let oc = mix3(C.deep, C.mid, smooth(0.15, 0.7, d2));
@@ -319,7 +320,7 @@ function* earthTex(W, H) {
     const fin = mix3(col, [222, 232, 240], clamp(seaIce * (1 - L) * (0.7 + 0.5 * detail), 0, 1));
     day[k * 3] = fin[0]; day[k * 3 + 1] = fin[1]; day[k * 3 + 2] = fin[2];
     spec[k] = (1 - L) * (1 - seaIce) * 255;
-    height[k] = L * (0.12 + mt * 0.9 * ridge + detail * 0.12);
+    height[k] = smooth(0.3, 0.7, v) * 0.1 + L * (mt * 0.9 * ridge + detail * 0.1); // a gentle shelf at the coast, not a cliff
     // night: city lights clustered on land, brightest in the populated belts and on coasts
     const coast = L * smooth(0.25, 0.7, 1 - wide) * 0.15;
     const pop = L * (1 - clamp(ice, 0, 1)) * (1 - clamp(des, 0, 1) * 0.85) * (M.urban[k] * 0.95 + 0.12 * smooth(15, 35, lat) * smooth(62, 50, lat) + coast);
@@ -342,9 +343,12 @@ function* earthTex(W, H) {
       px = px * cs + cx * sn + ux * dt * (1 - cs); py = py * cs + cy * sn + uy * dt * (1 - cs); pz = pz * cs + cz * sn + uz * dt * (1 - cs);
     }
     const wx = fbm3(px * 2, py * 2, pz * 2, 3, 41) - 0.5, wz = fbm3(px * 2 + 5, py * 2, pz * 2, 3, 42) - 0.5;
-    let cv = fbm3(px * 3.2 + wx * 2, py * 6 + wx, pz * 3.2 + wz * 2, 5, 43);
+    let cv = fbm3(px * 3.2 + wx * 2, py * 6 + wx, pz * 3.2 + wz * 2, W > 1500 ? 7 : 5, 43);
     cv += 0.1 * Math.exp(-(((lat - 5) / 7) ** 2)) - 0.12 * Math.exp(-(((a - 24) / 8) ** 2)) + 0.09 * Math.exp(-(((a - 55) / 11) ** 2)) + 0.05 * smooth(70, 85, a);
-    let cl = smooth(0.5, 0.74, cv);
+    let cl = smooth(0.52, 0.7, cv);
+    // fields of small cumulus where the air is moist but not overcast (fine detail up close)
+    const cu = smooth(0.56, 0.72, fbm3(x * 46, y * 46, z * 46, 3, 44)) * smooth(0.36, 0.55, cv) * (1 - cl) * (0.6 + 0.6 * Math.exp(-(((a - 12) / 18) ** 2))) * (1 - clamp(des, 0, 1));
+    cl = Math.min(1, cl + cu * 0.85);
     for (const vt of vort) if (vt.k > 1) { const dd = Math.acos(clamp(x * vt.c[0] + y * vt.c[1] + z * vt.c[2], -1, 1)) / vt.r; cl = Math.max(cl, smooth(1.4, 0.3, dd) * (dd < 0.12 ? 0.2 : 1)); }
     cloud[k] = 255 * Math.min(1, cl * 1.1);
   });
@@ -443,8 +447,12 @@ function* bandTex(W, H, bands, opts) {
     // turbulence stretched along longitude (zonal winds), stronger at belt edges
     const tu = fbm3(x * opts.f, y * opts.f * opts.stretch, z * opts.f, 5, opts.seed) - 0.5;
     const tw = fbm3(x * opts.f * 3, y * opts.f * opts.stretch * 2, z * opts.f * 3, 4, opts.seed + 9) - 0.5;
-    let la = lat + tu * opts.warp + tw * opts.warp * 0.5 * Math.sin(lat * 0.35);
-    let col = bandAt(la).map((c) => c * (1 + tw * opts.contrast));
+    // a second warp, fed by the first, rolls the flow into eddies and curls (shear
+    // between jets of opposite direction, strongest at the belt edges)
+    const edge = 0.5 + 0.5 * Math.abs(Math.sin(lat * 0.33));
+    const tq = fbm3(x * opts.f * 5 + tu * 5, y * opts.f * opts.stretch * 2.2 + tw * 4, z * opts.f * 5 - tu * 5, W > 500 ? 6 : 4, opts.seed + 17) - 0.5;
+    let la = lat + tu * opts.warp + tw * opts.warp * 0.5 * Math.sin(lat * 0.35) + tq * opts.warp * 0.7 * edge;
+    let col = bandAt(la).map((c) => c * (1 + tw * opts.contrast + tq * opts.contrast * 0.9));
     if (opts.extra) col = opts.extra(col, x, y, z, lat, lon, tu, tw);
     day[k * 3] = col[0]; day[k * 3 + 1] = col[1]; day[k * 3 + 2] = col[2];
   });
@@ -460,11 +468,13 @@ function jupiterTex(W, H) {
     // Great Red Spot with its swirling interior and pale hollow around it
     const d = oval(lat + tu * 2, lon, -22, 20, 6.5, 12);
     if (d < 1.6) {
-      const ang = Math.atan2(lat + 22, (((lon - 20 + 540) % 360) - 180) / 1.8);
-      const swirl = 0.93 + 0.07 * Math.sin(d * 11 - ang * 2 + tw * 6);
-      col = mix3(col, [236, 222, 196], smooth(1.6, 1.1, d) * 0.7);
-      col = mix3(col, [196, 92, 58].map((c) => c * swirl), smooth(1.05, 0.7, d));
-      col = mix3(col, [214, 118, 76], smooth(0.35, 0, d) * 0.5);
+      // anticyclonic flow: sample turbulence in coordinates spun round the centre, faster near the rim
+      const ex = ((((lon - 20 + 540) % 360) - 180) / 12), ey = (lat + 22) / 6.5, spin = 2.6 * Math.min(1, d) ** 1.5;
+      const rx = ex * Math.cos(spin) - ey * Math.sin(spin), ry = ex * Math.sin(spin) + ey * Math.cos(spin);
+      const inner = fbm3(rx * 3, ry * 3, 7.7, 5, 141) - 0.5;
+      col = mix3(col, [238, 224, 200], smooth(1.6, 1.1, d) * 0.65); // the pale "hollow" around it
+      const core = mix3([214, 124, 82], [178, 78, 50], smooth(0.2, 0.85, d)).map((c) => c * (1 + inner * 0.5));
+      col = mix3(col, core, smooth(1.05, 0.78, d + inner * 0.15));
     }
     // white ovals and dark barges
     for (const [la, lo, r] of [[-41, -40, 2.4], [-41, 60, 2], [-41, 140, 2.2], [-34, -120, 1.6], [37, 80, 1.7], [-58, 0, 1.6]]) { const e = oval(lat, lon, la, lo, r, r * 1.6); if (e < 1.3) col = mix3(col, [242, 236, 220], smooth(1.3, 0.6, e)); }
@@ -602,16 +612,22 @@ function pump() {
   while (performance.now() < end) { const r = job.gen.next(); if (r.done) { texCache.set(job.key, r.value); queue.shift(); break; } }
   setTimeout(pump, 0);
 }
-export function bodyTex(name, big) {
-  const small = name + ":S", key = name + ":L";
-  if (big && texCache.has(key)) return texCache.get(key);
-  if (!texCache.has(small)) texCache.set(small, drain(BODIES[name].gen(256, 128)));
-  if (big && !queue.some((j) => j.key === key)) {
-    const W = name === "earth" || name === "moon" ? 1024 : 768;
-    queue.push({ key, gen: BODIES[name].gen(W, W / 2) });
-    if (!pumping) { pumping = true; setTimeout(pump, 0); }
+// level: 0 = small only, 1 = full size, 2 = extra large (Earth seen up close from orbit).
+// Returns the best texture built so far and queues the rest.
+export function bodyTex(name, level) {
+  level = level === true ? 1 : level || 0;
+  const keys = [name + ":S", name + ":L", name + ":XL"];
+  if (!texCache.has(keys[0])) texCache.set(keys[0], drain(BODIES[name].gen(256, 128)));
+  let best = keys[0];
+  for (let l = 1; l <= level; l++) {
+    if (texCache.has(keys[l])) { best = keys[l]; continue; }
+    if (!queue.some((j) => j.key === keys[l])) {
+      const W = l === 2 ? 2048 : name === "earth" || name === "moon" ? 1024 : 768;
+      queue.push({ key: keys[l], gen: BODIES[name].gen(W, W / 2) });
+      if (!pumping) { pumping = true; setTimeout(pump, 0); }
+    }
   }
-  return texCache.get(small);
+  return texCache.get(best);
 }
 // Resolves once every queued texture is built (used by tests and screenshots).
 export const texturesReady = () => new Promise((res) => { const check = () => (queue.length ? setTimeout(check, 30) : res()); check(); });
@@ -726,8 +742,14 @@ export class SphereView {
       let b = day[i00 * 3 + 2] * w00 + day[i10 * 3 + 2] * w10 + day[i01 * 3 + 2] * w01 + day[i11 * 3 + 2] * w11;
       if (star) {
         // limb darkening: dimmer and redder toward the edge
-        const mu = nz, ld = 1 - 0.62 * (1 - mu) - 0.2 * (1 - mu) * (1 - mu);
-        r = (r / 255) * tint[0] * ld * exp; g = (g / 255) * tint[1] * ld * (0.85 + 0.15 * mu) * exp; b = (b / 255) * tint[2] * ld * (0.7 + 0.3 * mu) * exp;
+        // limb darkening, and the colour shift that goes with it: near-white where we see
+        // deep, hot layers at the centre, through the star's colour to deep orange-red at the edge
+        const mu = nz, I = (r / 255) * (1 - 0.62 * (1 - mu) - 0.2 * (1 - mu) * (1 - mu)) * exp;
+        let c0, c1, k;
+        if (I < 0.62) { c0 = [tint[0] * 0.8, tint[1] * 0.38, tint[2] * 0.16]; c1 = tint; k = I / 0.62; }
+        else { c0 = tint; c1 = [255, 250, 236]; k = Math.min(1, (I - 0.62) / 0.45); }
+        const br = Math.min(1, 0.25 + I * 0.9);
+        r = (c0[0] + (c1[0] - c0[0]) * k) * br; g = (c0[1] + (c1[1] - c0[1]) * k) * br; b = (c0[2] + (c1[2] - c0[2]) * k) * br;
       } else {
         if (hgt && bump) {
           const ia = y0 * W, dh = hgt[ia + x1] - hgt[ia + ((x0 - 1 + W) % W)], dv = hgt[(y0 > 0 ? y0 - 1 : 0) * W + x0] - hgt[y1 * W + x0];
@@ -752,21 +774,32 @@ export class SphereView {
           const cfx = (lon / TAU) * W + crotW - 0.5, cxf = Math.floor(cfx), ctx_ = cfx - cxf, c0 = ((cxf % W) + W) % W, c1 = (c0 + 1) % W;
           cl = ((cloud[y0 * W + c0] * (1 - ctx_) + cloud[y0 * W + c1] * ctx_) * (1 - ty) + (cloud[y1 * W + c0] * (1 - ctx_) + cloud[y1 * W + c1] * ctx_) * ty) / 255;
         }
-        const L = lit + amb;
+        let L = lit + amb;
+        // cloud shadows: look up the cloud deck a little way toward the Sun; the
+        // offset grows as the Sun gets lower, so shadows stretch out near the terminator
+        if (cloud && ndl > 0.02) {
+          const e = p * 6, le = Lx * T[e] + Ly * T[e + 1] + Lz * T[e + 2], ln = Lx * T[e + 3] + Ly * T[e + 4] + Lz * T[e + 5];
+          const sl = Math.hypot(le, ln) || 1, d = Math.min(0.03, (0.004 * Math.sqrt(Math.max(0, 1 - ndl * ndl))) / ndl);
+          const sx = Math.round((lon / TAU) * W + crotW + ((le / sl) * d * W) / (TAU * Math.max(0.15, Math.cos(lat)))), sy = Math.round(fy - ((ln / sl) * d * H) / Math.PI);
+          const cs = cloud[clamp(sy, 0, H - 1) * W + ((sx % W) + W) % W] / 255;
+          L *= 1 - 0.5 * cs * (1 - cl);
+        }
         r *= L; g *= L; b *= L;
         if (specK && spec) {
           const sp = (spec[i00] * w00 + spec[i10] * w10 + spec[i01] * w01 + spec[i11] * w11) / 255;
           if (sp > 0 && ndl > 0) { const nh = (N[p * 3] * hx + N[p * 3 + 1] * hy + N[p * 3 + 2] * hz) / hl; const s = sp * specK * (Math.pow(Math.max(0, nh), 70) * 2.2 + Math.pow(Math.max(0, nh), 8) * 0.18) * (1 - cl); r += 255 * s; g += 240 * s; b += 215 * s; }
         }
-        if (cl > 0) { const cL = Math.max(0, mu0 * 0.9 + 0.1) + amb; r = r * (1 - cl) + 250 * cl * cL; g = g * (1 - cl) + 252 * cl * cL; b = b * (1 - cl) + 255 * cl * cL; }
+        // thin cloud is greyer, thick cloud tops brilliant white
+        if (cl > 0) { const cL = (Math.max(0, mu0 * 0.9 + 0.1) + amb) * (0.72 + 0.28 * cl); r = r * (1 - cl) + 250 * cl * cL; g = g * (1 - cl) + 252 * cl * cL; b = b * (1 - cl) + 255 * cl * cL; }
         if (night && nightK) {
           const dark = 1 - smooth(-0.12, 0.08, mu0);
-          if (dark > 0) { const nk = dark * nightK * (1 - cl * 0.75); r += (night[i00 * 3] * w00 + night[i10 * 3] * w10 + night[i01 * 3] * w01 + night[i11 * 3] * w11) * nk; g += (night[i00 * 3 + 1] * w00 + night[i10 * 3 + 1] * w10 + night[i01 * 3 + 1] * w01 + night[i11 * 3 + 1] * w11) * nk; b += (night[i00 * 3 + 2] * w00 + night[i10 * 3 + 2] * w10 + night[i01 * 3 + 2] * w01 + night[i11 * 3 + 2] * w11) * nk; }
+          // break the lights into points finer than the texture: towns, not a glow
+          if (dark > 0) { const hv = hash(Math.floor(fx * 4), Math.floor(fy * 4), 0, 5), nk = dark * nightK * (1 - cl * 0.75) * (0.15 + 2.2 * hv * hv * hv); r += (night[i00 * 3] * w00 + night[i10 * 3] * w10 + night[i01 * 3] * w01 + night[i11 * 3] * w11) * nk; g += (night[i00 * 3 + 1] * w00 + night[i10 * 3 + 1] * w10 + night[i01 * 3 + 1] * w01 + night[i11 * 3 + 1] * w11) * nk; b += (night[i00 * 3 + 2] * w00 + night[i10 * 3 + 2] * w10 + night[i01 * 3 + 2] * w01 + night[i11 * 3 + 2] * w11) * nk; }
         }
         if (emit && emitK) { r += (emit[i00 * 3] * w00 + emit[i11 * 3] * w11 + emit[i10 * 3] * w10 + emit[i01 * 3] * w01) * emitK; g += (emit[i00 * 3 + 1] * w00 + emit[i11 * 3 + 1] * w11 + emit[i10 * 3 + 1] * w10 + emit[i01 * 3 + 1] * w01) * emitK; b += (emit[i00 * 3 + 2] * w00 + emit[i11 * 3 + 2] * w11 + emit[i10 * 3 + 2] * w10 + emit[i01 * 3 + 2] * w01) * emitK; }
         if (atmo && atmoK) {
           // scattering: blue haze thickening toward the limb on the day side, a warm band at the terminator
-          const rim = Math.pow(1 - Math.max(0, N[p * 3 + 2]), 2.2), day_ = smooth(-0.25, 0.4, mu0);
+          const rim = Math.pow(1 - Math.max(0, N[p * 3 + 2]), 3), day_ = smooth(-0.25, 0.4, mu0);
           const a = rim * day_ * atmoK * 0.9;
           r = r * (1 - a * 0.5) + atmo[0] * a; g = g * (1 - a * 0.5) + atmo[1] * a; b = b * (1 - a * 0.5) + atmo[2] * a;
           const tw = Math.exp(-(((mu0 - 0.02) / 0.06) ** 2)) * atmoK * 0.14 * rim;

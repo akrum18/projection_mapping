@@ -239,17 +239,34 @@ rotating globes, not flat pictures, so they read as real spheres on a wall.
 Notes:
 
 - **Real detail.** Earth has real coastlines, mountain ranges, deserts, ice
-  caps, swirling cloud systems, a sun glint on the oceans and city lights
-  (including the Nile) on the night side. The Moon has its real maria and
+  caps, swirling cloud systems with fields of small cumulus, clouds that cast
+  shadows on the ground (longest near sunset), a sun glint on the oceans and
+  city lights (including the Nile) that break into individual towns up close. The Moon has its real maria and
   Tycho's and Copernicus's ray craters, and its full phase looks evenly bright
   the way the real Moon does. Mars has Olympus Mons, Valles Marineris and its
   polar caps; Jupiter the Great Red Spot and its moons' shadows; Saturn its
   rings with the Cassini division, ring shadows and the north polar hexagon;
-  Pluto its heart.
+  Pluto its heart. Jupiter's belts roll into eddies where opposing jets meet.
+- **The Sun** goes from white-hot at the centre to deep orange at the limb, as
+  real white-light images do; prominences are faint red threads.
+- **Eclipse:** the Moon is invisible against the daytime sky except where it
+  covers the Sun, as in reality.
+- **Galaxy** is modelled as real ones are built: an exponential disc and a
+  yellow bulge, blue spiral density waves with pink star-forming knots, and
+  thin dust lanes along the inner edge of each arm.
+- **Milky Way** is a river of countless faint stars with dark rifts, a warm
+  core and green airglow near the horizon.
+- **Constellations** include the Orion Nebula, the Andromeda Galaxy and the
+  Lagoon and Trifid nebulae. Each sky turns to whatever angle fills the
+  surface best, as the real sky turns through the night.
+- **Rocket launch** is framed like long-lens launch footage: the camera tracks
+  and pulls back, leaving a tall exhaust column lit orange by the flame.
 - **Sun angle** turns a planet from full to crescent; **Sunlight: cycle** runs
   through the phases.
 - Full-size planet textures build in the background over a second or two (a
   softer version shows meanwhile), so picking a planet never freezes the page.
+  Earth from orbit also builds an extra-detailed Earth, which takes about ten
+  seconds on a typical laptop.
 - **Space starter** puts a rocket launch on tall columns, meteors on roof
   lines, the Milky Way on long strips, galaxies, nebulae, a black hole, the
   Solar System, Earth from orbit or the eclipse on big areas, and planets, the

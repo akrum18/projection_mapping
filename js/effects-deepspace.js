@@ -27,46 +27,64 @@ function pixelCanvas(gw, gh, fn) {
 // geo: the band's normal (nx, ny), its offset from the pole and where the core sits
 // along it, all in texture units (the texture spans 1 × 1, centred on the pole).
 function milkyWayCanvas(D, seed, geo) {
-  const gs = Math.max(64, Math.round(D / 4)), rng = seeded(seed);
+  const gs = Math.max(64, Math.round(D / 3)), rng = seeded(seed);
   const { nx, ny, off, core: sCore } = geo;
+  const dens = new Float32Array(gs * gs);
   const band = pixelCanvas(gs, gs, (i, j) => {
     const x = i / gs - 0.5, y = j / gs - 0.5;
     const v = (x * nx + y * ny - off) / 0.1, sAlong = x * ny - y * nx;
-    if (Math.abs(v) > 3) return [0, 0, 0, 0];
+    if (Math.abs(v) > 3.2) return [0, 0, 0, 0];
     const warp = fbm3(sAlong * 6, v * 0.6, 0.5, 3, seed + 1) - 0.5;
-    const core = Math.exp(-(((sAlong - sCore) / 0.1) ** 2));
-    const width = 1 + core * 0.9;
-    let I = Math.exp(-(((v + warp * 0.8) / width) ** 2) * 1.6) * (0.3 + 0.75 * fbm3(sAlong * 9, v * 1.5, 0.3, 5, seed + 2));
-    // star clouds: knotty brightening
-    I *= 0.65 + 0.7 * smooth(0.5, 0.75, fbm3(sAlong * 22, v * 3, 0.7, 4, seed + 3));
-    // the Great Rift down the middle, and patchy dark nebulae
-    const rift = smooth(0.35, 0.75, fbm3(sAlong * 5, v * 0.8, 0.1, 4, seed + 4)) * Math.exp(-((v * 1.1 + 0.25 - warp * 1.5) ** 2) * 3);
-    const dark = smooth(0.58, 0.72, fbm3(sAlong * 12, v * 2.5, 0.9, 4, seed + 5)) * 0.6;
-    I *= (1 - rift * 0.9) * (1 - dark * Math.exp(-v * v * 0.5));
-    I += core * Math.exp(-v * v * 2) * 0.45 * (1 - rift * 0.8);
-    I *= 0.85;
-    const warm = clamp(core * 1.4 + 0.15, 0, 1);
-    const pink = smooth(0.78, 0.86, fbm3(sAlong * 40, v * 6, 0.2, 2, seed + 6)) * Math.exp(-v * v * 3) * 0.6;
-    const r = (200 + 55 * warm) * I + 255 * pink * I, g = (205 + 25 * warm) * I + 90 * pink * I, b = (255 - 70 * warm) * I + 140 * pink * I;
-    return [Math.min(255, r), Math.min(255, g), Math.min(255, b), 255 * clamp(I, 0, 1)];
+    const core = Math.exp(-(((sAlong - sCore) / 0.11) ** 2));
+    const width = 1 + core * 1.1;
+    // overall glow of unresolved stars, swelling into the bulge of the core
+    let I = Math.exp(-(((v + warp * 0.8) / width) ** 2) * 1.5) * (0.35 + 0.65 * fbm3(sAlong * 7, v * 1.2, 0.3, 4, seed + 2));
+    // star clouds: knots and a fine mottling, the way millions of faint stars blend
+    I *= 0.55 + 0.9 * smooth(0.45, 0.8, fbm3(sAlong * 24, v * 3.5, 0.7, 4, seed + 3));
+    I *= 0.75 + 0.5 * noise3(sAlong * 160, v * 18, 0.4, seed + 7);
+    // the Great Rift and smaller dark nebulae: sharp-edged, reddening the light at their edges
+    const riftShape = fbm3(sAlong * 5, v * 0.8, 0.1, 5, seed + 4) + (fbm3(sAlong * 30, v * 4, 0.6, 3, seed + 8) - 0.5) * 0.35;
+    const rift = smooth(0.42, 0.62, riftShape) * Math.exp(-((v * 1.1 + 0.25 - warp * 1.5) ** 2) * 3);
+    const dark = smooth(0.6, 0.7, fbm3(sAlong * 13, v * 2.6, 0.9, 4, seed + 5)) * 0.7;
+    const ext = clamp(rift * 0.92 + dark * Math.exp(-v * v * 0.4) * (1 - rift), 0, 0.95);
+    I *= 1 - ext;
+    I += core * Math.exp(-v * v * 1.6) * 0.5 * (1 - ext);
+    I *= 0.8;
+    // colour: warm tan in the core, neutral-to-bluish star clouds, redder where dust thins the light
+    const warm = clamp(core * 1.3 + 0.12 + ext * 0.6, 0, 1);
+    const pink = smooth(0.8, 0.9, fbm3(sAlong * 40, v * 6, 0.2, 3, seed + 6)) * Math.exp(-v * v * 3) * 0.5 * (1 - ext);
+    const r = (205 + 50 * warm) * I + 255 * pink * I, g = (208 + 6 * warm) * I + 80 * pink * I, b = (250 - 95 * warm) * I + 120 * pink * I;
+    dens[j * gs + i] = clamp(I, 0, 1);
+    return [Math.min(255, r), Math.min(255, g), Math.min(255, b), 255 * clamp(I * 1.1, 0, 1)];
   });
   const c = document.createElement("canvas"); c.width = c.height = D;
   const g = c.getContext("2d");
-  g.imageSmoothingEnabled = true; g.globalAlpha = 0.85; g.drawImage(band, 0, 0, D, D); g.globalAlpha = 1;
-  // stars: denser along the band
-  const bd = band.getContext("2d").getImageData(0, 0, gs, gs).data;
-  const n = Math.round((D * D) / 500), m = Math.max(0.6, D / 1100), brightest = [];
-  for (let i = 0; i < n * 2.5; i++) {
-    const x = rng() * D, y = rng() * D, k = ((Math.floor((y / D) * gs) * gs + Math.floor((x / D) * gs)) * 4) + 3;
-    const dens = bd[k] / 255;
-    if (rng() > 0.35 + dens * 1.6) continue;
-    const mag = Math.pow(rng(), 8), col = starColor(rng());
-    if (mag > 0.35 && brightest.length < 90) { brightest.push({ x, y, mag, col, ph: rng() * TAU }); continue; }
-    g.fillStyle = col; g.globalAlpha = 0.3 + 0.7 * Math.min(1, mag * 3 + rng() * 0.25);
-    const r = (0.4 + mag * 2.3) * m;
+  g.imageSmoothingEnabled = true; g.globalAlpha = 0.6; g.drawImage(band, 0, 0, D, D); g.globalAlpha = 1;
+  // stars: most are faint pinpricks, crowding thickly into the band
+  const n = Math.round((D * D) / 45), m = Math.max(0.6, D / 1300), brightest = [];
+  for (let i = 0; i < n; i++) {
+    const x = rng() * D, y = rng() * D, dd = dens[Math.floor((y / D) * gs) * gs + Math.floor((x / D) * gs)];
+    if (rng() > 0.05 + dd * dd * 2.5) continue;
+    const mag = Math.pow(rng(), 11), col = starColor(rng());
+    if (mag > 0.4 && brightest.length < 60) { brightest.push({ x, y, mag, col, ph: rng() * TAU }); continue; }
+    g.fillStyle = col; g.globalAlpha = 0.12 + 0.88 * Math.min(1, mag * 4 + rng() * rng() * 0.6);
+    const r = (0.45 + mag * 2.6) * m;
     if (r > 1.6) { g.beginPath(); g.arc(x, y, r / 2, 0, TAU); g.fill(); } else g.fillRect(x - r / 2, y - r / 2, r, r);
   }
   g.globalAlpha = 1;
+  // star dust: a pinprick in a few pixels out of every hundred, far denser inside the band
+  const dust = g.createImageData(D, D), dd8 = dust.data, step = D / gs;
+  for (let y = 0; y < D; y++) {
+    const row = Math.floor(y / step) * gs;
+    for (let x = 0; x < D; x++) {
+      const dv = dens[row + Math.floor(x / step)];
+      if (rng() > 0.003 + dv * dv * 0.09) continue;
+      const b = 60 + 195 * rng() * rng(), k = (y * D + x) * 4, tint = rng();
+      dd8[k] = b * (tint < 0.3 ? 0.85 : 1); dd8[k + 1] = b * 0.95; dd8[k + 2] = b * (tint > 0.7 ? 0.8 : 1); dd8[k + 3] = 255;
+    }
+  }
+  const dc = document.createElement("canvas"); dc.width = dc.height = D; dc.getContext("2d").putImageData(dust, 0, 0);
+  g.globalCompositeOperation = "lighter"; g.drawImage(dc, 0, 0); g.globalCompositeOperation = "source-over";
   return { c, brightest, m };
 }
 function horizon(ctx, w, h, kind, seed) {
@@ -111,6 +129,10 @@ DEEPSPACE.milkyway = {
     const g = ctx.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#00010a"); g.addColorStop(0.65, "#020617"); g.addColorStop(0.88, `rgb(${12 + 40 * p.glow | 0},${16 + 30 * p.glow | 0},${30 + 20 * p.glow | 0})`); g.addColorStop(1, `rgb(${20 + 70 * p.glow | 0},${22 + 45 * p.glow | 0},${30 + 20 * p.glow | 0})`);
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    // airglow: the faint green (and higher, red) glow of the upper atmosphere, strongest low down
+    const ag = ctx.createLinearGradient(0, h * 0.35, 0, h * 0.9);
+    ag.addColorStop(0, "rgba(90,30,40,0)"); ag.addColorStop(0.35, `rgba(70,25,35,${0.1 * p.glow + 0.03})`); ag.addColorStop(0.7, `rgba(40,90,55,${0.22 * p.glow + 0.05})`); ag.addColorStop(1, `rgba(50,110,70,${0.3 * p.glow + 0.05})`);
+    ctx.fillStyle = ag; ctx.fillRect(0, 0, w, h);
     // turning: about the pole like a time-lapse; drift: a slow sway that keeps the composition
     const ang = p.motion === "turning" ? (t - s.t0) * p.speed * 0.0042 : p.motion === "drift" ? 0.035 * Math.sin((t - s.t0) * 0.012) : 0;
     const sc = Rt * 2 / D;
@@ -127,8 +149,8 @@ DEEPSPACE.milkyway = {
       const lx = (st.x - D / 2) * sc, ly = (st.y - D / 2) * sc, x = px + lx * ca - ly * sa, y = py + lx * sa + ly * ca;
       if (x < -10 || x > w + 10 || y < -10 || y > h + 10) continue;
       const low = clamp(y / h, 0, 1), tw = 1 - (0.15 + 0.55 * low * low) * (0.5 + 0.5 * Math.sin(t * (5 + low * 9) + st.ph)) * (0.5 + 0.5 * Math.sin(t * 13 + st.ph * 3));
-      const r = (1 + st.mag * 3) * s.mw.m * sc * 1.4;
-      ctx.globalAlpha = tw; ctx.drawImage(glow(st.col), x - r * 2.5, y - r * 2.5, r * 5, r * 5);
+      const r = (0.8 + st.mag * 2.2) * s.mw.m * sc * 1.3;
+      ctx.globalAlpha = tw * 0.85; ctx.drawImage(glow(st.col), x - r * 1.8, y - r * 1.8, r * 3.6, r * 3.6);
       ctx.fillStyle = "#fff"; ctx.fillRect(x - r * 0.3, y - r * 0.3, r * 0.6, r * 0.6);
     }
     ctx.restore();
@@ -244,8 +266,8 @@ DEEPSPACE.meteors = {
 // Real star positions (right ascension in hours, declination in degrees, magnitude,
 // colour class), projected stereographically about the middle of each sky.
 const CON = {
-  Orion: { s: { Betelgeuse: [5.92, 7.41, 0.5, "r"], Rigel: [5.24, -8.2, 0.13, "b"], Bellatrix: [5.42, 6.35, 1.64, "b"], Mintaka: [5.53, -0.3, 2.23, "b"], Alnilam: [5.6, -1.2, 1.69, "b"], Alnitak: [5.68, -1.94, 1.77, "b"], Saiph: [5.8, -9.67, 2.09, "b"], Meissa: [5.59, 9.93, 3.39, "b"], pi3: [4.83, 6.96, 3.19, "w"], pi4: [4.85, 5.6, 3.69, "b"], pi2: [4.84, 8.9, 4.35, "w"], pi5: [4.9, 2.44, 3.72, "b"], mu: [6.08, 9.65, 4.12, "w"], xi: [6.2, 14.21, 4.48, "b"], nu: [6.13, 14.77, 4.42, "b"], chi1: [5.91, 20.28, 4.41, "y"] },
-    l: [["Meissa", "Betelgeuse"], ["Meissa", "Bellatrix"], ["Betelgeuse", "Alnitak"], ["Bellatrix", "Mintaka"], ["Mintaka", "Alnilam"], ["Alnilam", "Alnitak"], ["Alnitak", "Saiph"], ["Mintaka", "Rigel"], ["Bellatrix", "pi3"], ["pi2", "pi3"], ["pi3", "pi4"], ["pi4", "pi5"], ["Betelgeuse", "mu"], ["mu", "xi"], ["xi", "nu"], ["xi", "chi1"]] },
+  Orion: { s: { Betelgeuse: [5.92, 7.41, 0.5, "r"], Rigel: [5.24, -8.2, 0.13, "b"], Bellatrix: [5.42, 6.35, 1.64, "b"], Mintaka: [5.53, -0.3, 2.23, "b"], Alnilam: [5.6, -1.2, 1.69, "b"], Alnitak: [5.68, -1.94, 1.77, "b"], Saiph: [5.8, -9.67, 2.09, "b"], Meissa: [5.59, 9.93, 3.39, "b"], "ι Ori": [5.59, -5.91, 2.77, "b"], "θ¹ Ori": [5.59, -5.39, 4.0, "w"], "42 Ori": [5.59, -4.84, 4.6, "b"], pi3: [4.83, 6.96, 3.19, "w"], pi4: [4.85, 5.6, 3.69, "b"], pi2: [4.84, 8.9, 4.35, "w"], pi5: [4.9, 2.44, 3.72, "b"], mu: [6.08, 9.65, 4.12, "w"], xi: [6.2, 14.21, 4.48, "b"], nu: [6.13, 14.77, 4.42, "b"], chi1: [5.91, 20.28, 4.41, "y"] },
+    l: [["Meissa", "Betelgeuse"], ["Meissa", "Bellatrix"], ["Betelgeuse", "Alnitak"], ["Bellatrix", "Mintaka"], ["Mintaka", "Alnilam"], ["Alnilam", "Alnitak"], ["Alnitak", "Saiph"], ["Mintaka", "Rigel"], ["Bellatrix", "pi3"], ["pi2", "pi3"], ["pi3", "pi4"], ["pi4", "pi5"], ["Betelgeuse", "mu"], ["mu", "xi"], ["xi", "nu"], ["xi", "chi1"]], neb: [[5.59, -5.39, 1.1, "#ff7fb0", "Orion Nebula", 0.85, 0.4]] },
   Taurus: { s: { Aldebaran: [4.6, 16.51, 0.85, "o"], Elnath: [5.44, 28.61, 1.65, "b"], "ζ Tau": [5.63, 21.14, 3.0, "b"], "γ Tau": [4.33, 15.63, 3.65, "y"], "δ Tau": [4.38, 17.54, 3.76, "y"], "ε Tau": [4.48, 19.18, 3.53, "y"], "λ Tau": [4.01, 12.49, 3.4, "b"], Alcyone: [3.79, 24.1, 2.87, "b"], Atlas: [3.82, 24.05, 3.62, "b"], Electra: [3.75, 24.11, 3.7, "b"], Maia: [3.76, 24.37, 3.87, "b"], Merope: [3.77, 23.95, 4.18, "b"], Taygeta: [3.75, 24.47, 4.3, "b"] },
     // the V of the Hyades opens from γ toward Aldebaran and ε; the horns end at Elnath and ζ
     l: [["ζ Tau", "Aldebaran"], ["Aldebaran", "γ Tau"], ["γ Tau", "δ Tau"], ["δ Tau", "ε Tau"], ["ε Tau", "Elnath"], ["γ Tau", "λ Tau"]], cluster: "Pleiades" },
@@ -259,7 +281,7 @@ const CON = {
     l: [["Dubhe", "Merak"], ["Merak", "Phecda"], ["Phecda", "Megrez"], ["Megrez", "Dubhe"], ["Megrez", "Alioth"], ["Alioth", "Mizar"], ["Mizar", "Alkaid"]] },
   "Ursa Minor": { s: { Polaris: [2.53, 89.26, 1.98, "y"], Kochab: [14.85, 74.16, 2.08, "o"], Pherkad: [15.35, 71.83, 3.0, "w"], Yildun: [17.54, 86.59, 4.35, "w"], "ε UMi": [16.77, 82.04, 4.2, "y"], "ζ UMi": [15.73, 77.79, 4.3, "w"], "η UMi": [16.29, 75.76, 4.95, "w"] },
     l: [["Polaris", "Yildun"], ["Yildun", "ε UMi"], ["ε UMi", "ζ UMi"], ["ζ UMi", "Kochab"], ["Kochab", "Pherkad"], ["Pherkad", "η UMi"], ["η UMi", "ζ UMi"]] },
-  Cassiopeia: { s: { Caph: [0.15, 59.15, 2.27, "w"], Schedar: [0.68, 56.54, 2.24, "o"], Navi: [0.95, 60.72, 2.15, "b"], Ruchbah: [1.43, 60.24, 2.68, "w"], Segin: [1.91, 63.67, 3.37, "b"] }, l: [["Caph", "Schedar"], ["Schedar", "Navi"], ["Navi", "Ruchbah"], ["Ruchbah", "Segin"]] },
+  Cassiopeia: { s: { Caph: [0.15, 59.15, 2.27, "w"], Schedar: [0.68, 56.54, 2.24, "o"], Navi: [0.95, 60.72, 2.15, "b"], Ruchbah: [1.43, 60.24, 2.68, "w"], Segin: [1.91, 63.67, 3.37, "b"] }, l: [["Caph", "Schedar"], ["Schedar", "Navi"], ["Navi", "Ruchbah"], ["Ruchbah", "Segin"]], neb: [[0.71, 41.27, 3, "#ffe4c4", "Andromeda Galaxy", 0.32, 0.6]] },
   Cepheus: { s: { Alderamin: [21.31, 62.59, 2.45, "w"], Alfirk: [21.48, 70.56, 3.23, "b"], Errai: [23.66, 77.63, 3.21, "o"], "ι Cep": [22.83, 66.2, 3.5, "o"], "ζ Cep": [22.18, 58.2, 3.35, "o"] }, l: [["Alderamin", "Alfirk"], ["Alfirk", "Errai"], ["Errai", "ι Cep"], ["ι Cep", "Alderamin"], ["Alderamin", "ζ Cep"], ["ζ Cep", "ι Cep"]] },
   Lyra: { s: { Vega: [18.62, 38.78, 0.03, "w"], "ε Lyr": [18.74, 39.67, 4.67, "w"], "ζ Lyr": [18.75, 37.6, 4.36, "w"], "δ Lyr": [18.91, 36.9, 4.3, "r"], Sulafat: [18.98, 32.69, 3.25, "b"], Sheliak: [18.83, 33.36, 3.52, "b"] }, l: [["Vega", "ε Lyr"], ["Vega", "ζ Lyr"], ["ζ Lyr", "δ Lyr"], ["δ Lyr", "Sulafat"], ["Sulafat", "Sheliak"], ["Sheliak", "ζ Lyr"]] },
   Cygnus: { s: { Deneb: [20.69, 45.28, 1.25, "w"], Sadr: [20.37, 40.26, 2.23, "y"], Gienah: [20.77, 33.97, 2.48, "o"], "δ Cyg": [19.75, 45.13, 2.87, "b"], Albireo: [19.51, 27.96, 3.05, "o"], "ζ Cyg": [21.22, 30.23, 3.2, "y"], "ι Cyg": [19.5, 51.73, 3.8, "w"], "κ Cyg": [19.28, 53.37, 3.8, "y"] },
@@ -268,7 +290,7 @@ const CON = {
   Scorpius: { s: { Antares: [16.49, -26.43, 1.06, "r"], Graffias: [16.09, -19.8, 2.62, "b"], Dschubba: [16.0, -22.62, 2.32, "b"], "π Sco": [15.98, -26.11, 2.89, "b"], "σ Sco": [16.35, -25.59, 2.89, "b"], "τ Sco": [16.6, -28.22, 2.82, "b"], "ε Sco": [16.84, -34.29, 2.29, "o"], "μ Sco": [16.86, -38.05, 3.0, "b"], "ζ Sco": [16.9, -42.36, 3.62, "o"], "η Sco": [17.2, -43.24, 3.32, "w"], Sargas: [17.62, -43.0, 1.86, "y"], "ι Sco": [17.79, -40.13, 2.99, "y"], "κ Sco": [17.71, -39.03, 2.39, "b"], Shaula: [17.56, -37.1, 1.62, "b"], Lesath: [17.51, -37.3, 2.7, "b"] },
     l: [["Graffias", "Dschubba"], ["Dschubba", "π Sco"], ["Dschubba", "σ Sco"], ["σ Sco", "Antares"], ["Antares", "τ Sco"], ["τ Sco", "ε Sco"], ["ε Sco", "μ Sco"], ["μ Sco", "ζ Sco"], ["ζ Sco", "η Sco"], ["η Sco", "Sargas"], ["Sargas", "ι Sco"], ["ι Sco", "κ Sco"], ["κ Sco", "Shaula"], ["Shaula", "Lesath"]] },
   Sagittarius: { s: { "Kaus Australis": [18.4, -34.38, 1.85, "b"], Nunki: [18.92, -26.3, 2.05, "b"], Ascella: [19.04, -29.88, 2.6, "w"], "Kaus Media": [18.35, -29.83, 2.7, "o"], "Kaus Borealis": [18.47, -25.42, 2.81, "o"], "φ Sgr": [18.76, -26.99, 3.17, "b"], Alnasl: [18.1, -30.42, 2.98, "o"], "τ Sgr": [19.12, -27.67, 3.32, "o"], "η Sgr": [18.29, -36.76, 3.11, "r"] },
-    l: [["Alnasl", "Kaus Media"], ["Kaus Media", "Kaus Australis"], ["Kaus Australis", "Alnasl"], ["Kaus Media", "Kaus Borealis"], ["Kaus Borealis", "φ Sgr"], ["Kaus Media", "φ Sgr"], ["φ Sgr", "Ascella"], ["Ascella", "Kaus Australis"], ["φ Sgr", "Nunki"], ["Nunki", "τ Sgr"], ["τ Sgr", "Ascella"], ["Kaus Australis", "η Sgr"]] },
+    l: [["Alnasl", "Kaus Media"], ["Kaus Media", "Kaus Australis"], ["Kaus Australis", "Alnasl"], ["Kaus Media", "Kaus Borealis"], ["Kaus Borealis", "φ Sgr"], ["Kaus Media", "φ Sgr"], ["φ Sgr", "Ascella"], ["Ascella", "Kaus Australis"], ["φ Sgr", "Nunki"], ["Nunki", "τ Sgr"], ["τ Sgr", "Ascella"], ["Kaus Australis", "η Sgr"]], neb: [[18.06, -24.38, 1.2, "#ff6f9a", "Lagoon Nebula", 0.6, 0.2], [18.04, -23.03, 0.5, "#c98bff", "Trifid", 1, 0]] },
   Leo: { s: { Regulus: [10.14, 11.97, 1.35, "b"], "η Leo": [10.12, 16.76, 3.48, "w"], Algieba: [10.33, 19.84, 2.08, "o"], Adhafera: [10.28, 23.42, 3.43, "w"], Rasalas: [9.88, 26.0, 3.88, "o"], "ε Leo": [9.76, 23.77, 2.98, "y"], Zosma: [11.24, 20.52, 2.56, "w"], Chertan: [11.24, 15.43, 3.33, "w"], Denebola: [11.82, 14.57, 2.14, "w"] },
     l: [["Regulus", "η Leo"], ["η Leo", "Algieba"], ["Algieba", "Adhafera"], ["Adhafera", "Rasalas"], ["Rasalas", "ε Leo"], ["Algieba", "Zosma"], ["Zosma", "Denebola"], ["Denebola", "Chertan"], ["Chertan", "Regulus"], ["Zosma", "Chertan"]] },
   "Boötes": { s: { Arcturus: [14.26, 19.18, -0.05, "o"], Izar: [14.75, 27.07, 2.35, "o"], Muphrid: [13.91, 18.4, 2.68, "y"], Seginus: [14.53, 38.31, 3.03, "w"], "δ Boo": [15.26, 33.31, 3.47, "y"], Nekkar: [15.03, 40.39, 3.5, "y"], "ρ Boo": [14.53, 30.37, 3.58, "o"] },
@@ -294,10 +316,11 @@ function projectSky(key) {
   const cons = sky.list.map((name) => {
     const C = CON[name], pts = {};
     for (const [k, [ra, de, mag, cc]] of Object.entries(C.s)) pts[k] = { xy: P(ra, de), mag, col: CCOL[cc], name: k };
-    return { name, pts, lines: C.l.filter(([a, b]) => pts[a] && pts[b]), cluster: C.cluster };
+    const nebs = (C.neb || []).map(([ra, de, size, col, label, ell = 1, ang = 0]) => ({ xy: P(ra, de), size, col, label, ell, ang }));
+    return { name, pts, lines: C.l.filter(([a, b]) => pts[a] && pts[b]), cluster: C.cluster, nebs };
   });
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  for (const c of cons) for (const s of Object.values(c.pts)) { x0 = Math.min(x0, s.xy[0]); x1 = Math.max(x1, s.xy[0]); y0 = Math.min(y0, s.xy[1]); y1 = Math.max(y1, s.xy[1]); }
+  for (const c of cons) for (const s of [...Object.values(c.pts), ...c.nebs]) { x0 = Math.min(x0, s.xy[0]); x1 = Math.max(x1, s.xy[0]); y0 = Math.min(y0, s.xy[1]); y1 = Math.max(y1, s.xy[1]); }
   return { cons, box: [x0, y0, x1, y1], sky };
 }
 DEEPSPACE.constellations = {
@@ -315,11 +338,29 @@ DEEPSPACE.constellations = {
     // tile previews run quickly and start with the figures already drawn
     const pace = info ? p.pace : 1.2;
     if (!s.proj || s.projKey !== p.sky) { s.proj = projectSky(p.sky); s.projKey = p.sky; s.t0 = t - (info ? 0 : s.proj.cons.length * pace); }
-    const { cons, box, sky } = s.proj, m = Math.min(w, h);
-    const sc = Math.min((w * 0.84) / Math.max(0.01, box[2] - box[0]), (h * 0.8) / Math.max(0.01, box[3] - box[1]));
-    const ox = w / 2 - ((box[0] + box[2]) / 2) * sc, oy = h / 2 - ((box[1] + box[3]) / 2) * sc;
+    const { cons, sky } = s.proj, m = Math.min(w, h);
+    // the sky turns through the night, so turn the chart to whichever angle fills the
+    // surface best (a tall winter sky lies on its side across a wide garage door)
+    const fitKey = [p.sky, (w / h).toFixed(2)].join(":");
+    if (s.fitKey !== fitKey) {
+      s.fitKey = fitKey;
+      const all = cons.flatMap((c) => [...Object.values(c.pts), ...c.nebs].map((q) => q.xy));
+      let best = null;
+      for (const deg of [0, 20, -20, 40, -40, 60, -60, 90]) {
+        const a = deg * RAD, ca = Math.cos(a), sa = Math.sin(a);
+        let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        for (const [x, y] of all) { const X = x * ca - y * sa, Y = x * sa + y * ca; x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); }
+        const k = Math.min((w * 0.84) / Math.max(0.01, x1 - x0), (h * 0.8) / Math.max(0.01, y1 - y0)) * (1 - Math.abs(deg) / 900); // slight preference for upright
+        if (!best || k > best.k) best = { k, a, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
+      }
+      s.fit = best;
+    }
+    const F = s.fit, sc = F.k, ca0 = Math.cos(F.a), sa0 = Math.sin(F.a);
     const rot = Math.sin(t * 0.02 * p.drift) * 0.06 * p.drift;
-    const X = (xy) => { const x = xy[0] * sc + ox - w / 2, y = xy[1] * sc + oy - h / 2; return [w / 2 + x * Math.cos(rot) - y * Math.sin(rot), h / 2 + x * Math.sin(rot) + y * Math.cos(rot)]; };
+    const X = (xy) => {
+      const x = (xy[0] * ca0 - xy[1] * sa0 - F.cx) * sc, y = (xy[0] * sa0 + xy[1] * ca0 - F.cy) * sc;
+      return [w / 2 + x * Math.cos(rot) - y * Math.sin(rot), h / 2 + x * Math.sin(rot) + y * Math.cos(rot)];
+    };
     // timeline: each constellation draws in; everything holds; fade; repeat
     const slots = cons.length + 1 + (sky.asterism.stars.length ? 1 : 0), cycle = (slots + 1.5) * pace, tt = ((t - s.t0) % cycle + cycle) % cycle;
     const fadeAll = smooth(cycle, cycle - pace * 0.6, tt) * smooth(0, 0.6, tt);
@@ -346,6 +387,15 @@ DEEPSPACE.constellations = {
         ctx.fillStyle = "#fff"; ctx.globalAlpha = tw; ctx.beginPath(); ctx.arc(x, y, r * 0.35, 0, TAU); ctx.fill();
       }
       ctx.globalCompositeOperation = "source-over";
+      // deep-sky objects as they look in binoculars: faint smudges of light
+      for (const N of c.nebs) {
+        const [x, y] = X(N.xy), r = N.size * sc * RAD * 0.5 * 1.6;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(x, y); ctx.rotate(N.ang); ctx.scale(1, N.ell);
+        ctx.globalAlpha = 0.3; ctx.drawImage(glow(N.col, 64, 0.2), -r, -r, r * 2, r * 2);
+        ctx.globalAlpha = 0.35; ctx.drawImage(glow("#fff6ee", 64, 0.1), -r * 0.25, -r * 0.25, r * 0.5, r * 0.5);
+        ctx.restore();
+        if (p.labels === "names" && on && smooth(0.45, 0.75, local) > 0.01) { ctx.globalAlpha = smooth(0.45, 0.75, local) * fadeAll * 0.8; ctx.fillStyle = "#c9b8ff"; ctx.textAlign = "left"; ctx.font = `italic ${Math.max(8, u * 8.5) | 0}px system-ui, sans-serif`; ctx.fillText(N.label, x + r * 0.9 + u * 3, y + u * 3); ctx.globalAlpha = 1; }
+      }
       if (c.cluster) { const pl = Object.values(c.pts).filter((x) => x.mag > 2.8 && x.xy && x.name.length > 3 && ["Alcyone", "Atlas", "Electra", "Maia", "Merope", "Taygeta"].includes(x.name)); if (pl.length) { const [x, y] = X(pl[0].xy); ctx.globalAlpha = 0.18; ctx.drawImage(glow("#9fbfff"), x - u * 16, y - u * 16, u * 32, u * 32); ctx.globalAlpha = 1; } }
       // names: the constellation, then its brightest stars
       if (p.labels === "names" && on) {
@@ -388,29 +438,40 @@ function nebulaCanvas(style, gw, gh, seed) {
   return pixelCanvas(gw, gh, (i, j) => {
     const X = (i / gw - 0.5) * asp, Y = j / gh - 0.5;
     const wx = fbm3(X * 2.2, Y * 2.2, 0.3, 4, seed) - 0.5, wy = fbm3(X * 2.2, Y * 2.2, 5.3, 4, seed + 1) - 0.5;
-    const qx = X + wx * 0.5, qy = Y + wy * 0.5;
-    const f1 = fbm3(qx * 3, qy * 3, 1.1, 6, seed + 2), f2 = fbm3(qx * 5, qy * 5, 2.7, 5, seed + 3), fil = ridged3(qx * 4, qy * 4, 3.3, 5, seed + 4);
+    // a light warp only: enough to bend the gas into flows without marbling it
+    const qx = X + wx * 0.22, qy = Y + wy * 0.22;
+    // billows (with more high-frequency texture than plain fbm) and fine filaments
+    const f1 = fbm3(qx * 3, qy * 3, 1.1, 7, seed + 2, 0.56), f2 = fbm3(qx * 5, qy * 5, 2.7, 6, seed + 3, 0.56);
+    const fil = ridged3(qx * 4, qy * 4, 3.3, 5, seed + 4) * 0.7 + ridged3(qx * 11, qy * 11, 6.1, 3, seed + 12) * 0.3;
     let r = 0, g = 0, b = 0;
     if (style === "pillars") {
       // teal oxygen glow above, gold sulphur and hydrogen toward the dusty base
       const oiii = smooth(0.35, 0.75, f1) * (0.6 + 0.5 * smooth(0.3, -0.5, Y)), sii = smooth(0.4, 0.8, f2) * (0.5 + 0.6 * smooth(-0.2, 0.5, Y)) + fil * 0.25;
       r = 255 * (sii * 0.95 + oiii * 0.15); g = 255 * (sii * 0.7 + oiii * 0.65); b = 255 * (oiii * 0.85 + sii * 0.15);
-      for (const [px, top, bw, lean] of pillars) {
-        const yy = (Y - top) / (0.5 - top); // 0 at the tip, 1 at the base
-        if (yy < -0.15) continue;
-        const half = bw * (0.3 + 0.7 * clamp(yy, 0, 1) ** 0.8), cx = px + lean * (1 - yy) + 0.03 * Math.sin(Y * 11 + px * 9);
-        const tip = yy < 0.1 ? Math.hypot((X - cx) / half, (yy - 0.1) / 0.14) : Math.abs(X - cx) / half;
-        // ragged, eroding edges at several scales
-        const rough = (fbm3(X * 7, Y * 7, px * 3, 4, seed + 7) - 0.5) * 0.7 + (fbm3(X * 24, Y * 24, px * 3, 3, seed + 9) - 0.5) * 0.35;
-        const edge = 1 - tip + rough;
-        if (edge > -0.3) {
-          const inside = smooth(-0.08, 0.35, edge) * 0.94;
-          // photo-evaporating skin: lit from above, brightest near the tips, wispy where it boils off
-          const lit = 0.45 + 0.55 * smooth(0.7, 0, yy);
-          const rim = Math.exp(-(((edge - 0.03) / 0.11) ** 2)) * lit * (0.6 + 0.6 * fbm3(X * 30, Y * 30, 2.2, 3, seed + 10));
-          const body = (0.1 + 0.3 * fbm3(X * 10, Y * 10, 7.7, 5, seed + 8)) * (0.6 + 0.6 * smooth(0.9, 0.1, yy));
-          r = r * (1 - inside) + 150 * body * inside + 255 * rim * 0.95; g = g * (1 - inside) + 92 * body * inside + 196 * rim * 0.85; b = b * (1 - inside) + 52 * body * inside + 120 * rim * 0.6;
+      // the pillars as a volume of dust: density falls off through a ragged edge, and the
+      // light from hot stars above catches every surface that faces up (density rising
+      // as you move down), so the lit skin follows the real shape, folds and all
+      const dens = (X, Y) => {
+        let D = 0;
+        for (const [px, top, bw, lean] of pillars) {
+          const yy = (Y - top) / (0.5 - top);
+          if (yy < -0.2) continue;
+          const half = bw * (0.3 + 0.7 * clamp(yy, 0, 1) ** 0.8), cx = px + lean * (1 - yy) + 0.03 * Math.sin(Y * 11 + px * 9);
+          const tip = yy < 0.1 ? Math.hypot((X - cx) / half, (yy - 0.1) / 0.14) : Math.abs(X - cx) / half;
+          const rough = (fbm3(X * 7, Y * 7, px * 3, 4, seed + 7) - 0.5) * 0.75 + (fbm3(X * 26, Y * 26, px * 3, 3, seed + 9) - 0.5) * 0.4;
+          D = Math.max(D, smooth(-0.12, 0.42, 1 - tip + rough));
         }
+        return D;
+      };
+      const D = dens(X, Y);
+      if (D > 0.002 || dens(X, Y - 0.02) > 0.002) {
+        const above = dens(X, Y - 0.014), facing = clamp((D - above) * 5, 0, 1);
+        const clump = fbm3(X * 12, Y * 12, 7.7, 5, seed + 8);
+        const thick = clamp(D * (0.75 + 0.6 * clump), 0, 1), opacity = clamp(thick * 1.1, 0, 0.9);
+        // brightest toward the tips, where the light arrives first
+        const lightK = 0.5 + 0.5 * smooth(0.4, -0.4, Y), skin = facing * lightK * (0.55 + 0.7 * fbm3(X * 34, Y * 34, 2.2, 3, seed + 10));
+        const body = 0.1 + 0.4 * clump * (1 - thick * 0.45);
+        r = r * (1 - opacity) + 160 * body * opacity + 255 * skin; g = g * (1 - opacity) + 98 * body * opacity + 200 * skin * 0.9; b = b * (1 - opacity) + 60 * body * opacity + 130 * skin * 0.7;
       }
     } else if (style === "emission") {
       const d = Math.hypot(X * 0.9, Y), core = Math.exp(-d * d * 7);
@@ -425,7 +486,7 @@ function nebulaCanvas(style, gw, gh, seed) {
       const inner = smooth(0.7, 0.1, d) * (0.5 + 0.5 * f2);
       const outer = Math.exp(-(((d - 0.92) / 0.18) ** 2)) * (0.5 + 0.7 * fil);
       // cometary knots: short radial dark-headed streaks at the inner edge of the ring
-      const kn = smooth(0.72, 0.9, noise3(Math.cos(ang) * 40, Math.sin(ang) * 40, d * 3, seed + 6)) * Math.exp(-(((d - 0.5) / 0.1) ** 2));
+      const kn = smooth(0.74, 0.9, noise3(Math.cos(ang) * 70, Math.sin(ang) * 70, d * 9, seed + 6)) * Math.exp(-(((d - 0.52) / 0.07) ** 2)) * 0.6;
       r = 255 * (outer * 1.0 + shell * 0.95 + kn * 0.45 + inner * 0.15); g = 255 * (outer * 0.25 + shell * 0.55 + inner * 0.75 + kn * 0.3); b = 255 * (outer * 0.3 + shell * 0.45 + inner * 0.95 + kn * 0.2);
       const halo = Math.exp(-d * 0.9) * 0.12 * f1; r += 255 * halo; g += 120 * halo; b += 150 * halo;
     } else {
@@ -481,58 +542,71 @@ DEEPSPACE.nebula = {
       const cx = w / 2 + ox, cy = h / 2 + oy, beat = Math.pow(Math.max(0, Math.sin(t * 9)), 12);
       ctx.globalAlpha = 0.5 + 0.5 * beat; ctx.drawImage(glow("#e8f0ff"), cx - m * 0.03, cy - m * 0.03, m * 0.06, m * 0.06);
       ctx.strokeStyle = "#a8c4ff"; ctx.lineWidth = m * 0.004;
-      for (let k = 0; k < 4; k++) { const e = ((t * 0.12 + k / 4) % 1); ctx.lineWidth = m * (0.004 + e * 0.012); ctx.globalAlpha = (1 - e) * e * 0.5; ctx.beginPath(); ctx.ellipse(cx, cy, m * (0.03 + e * 0.16), m * (0.015 + e * 0.07), -0.5, 0, TAU); ctx.stroke(); }
+      for (let k = 0; k < 4; k++) { const e = ((t * 0.12 + k / 4) % 1); ctx.lineWidth = m * (0.012 + e * 0.03); ctx.globalAlpha = (1 - e) * e * 0.14; ctx.beginPath(); ctx.ellipse(cx, cy, m * (0.03 + e * 0.16), m * (0.015 + e * 0.07), -0.5, 0, TAU); ctx.stroke(); }
       ctx.restore();
     }
   },
 };
 
 // ================================================================== galaxy
+// The galaxy as a light distribution, the way real ones are built: an exponential
+// disc and a bright bulge of old yellow stars, with spiral density waves (logarithmic
+// spirals) where young blue stars and pink star-forming regions crowd, and dark dust
+// lanes running along the inner edge of each arm. The smooth light is computed per
+// pixel at half resolution; individual bright stars are then sprinkled on top.
+function galaxyModel(p) {
+  const arms = Math.max(1, p.arms | 0), barred = p.style === "barred spiral", grand = p.style === "grand design";
+  const pitch = (grand ? 14 : 19) * RAD, bar = barred ? 0.3 : 0.12, tp = Math.tan(pitch);
+  // arm phase at (x, y) in disc units (radius 1 = edge); arms start at the bar ends
+  const phase = (x, y, r) => arms * (Math.atan2(y, x) - Math.log(Math.max(r, 0.02) / bar) / tp);
+  return { arms, barred, grand, bar, phase, sharp: grand ? 4 : 2.4 };
+}
 function galaxyCanvas(S, p, seed) {
+  const M = galaxyModel(p), G = Math.max(64, Math.round(S / 2)), rng = seeded(seed);
+  const diffuse = pixelCanvas(G, G, (i, j) => {
+    const x = ((i + 0.5) / G) * 2 - 1, y = ((j + 0.5) / G) * 2 - 1, r = Math.hypot(x, y);
+    if (r > 1.08) return [0, 0, 0, 0];
+    const n1 = fbm3(x * 3, y * 3, 0.5, 4, seed), n2 = fbm3(x * 13, y * 13, 1.5, 4, seed + 1);
+    const ph = M.phase(x, y, r) + (n1 - 0.5) * 1.6;
+    const armZone = smooth(M.bar * 0.75, M.bar * 1.5, r) * smooth(1.02, 0.7, r);
+    const arm = Math.pow(0.5 + 0.5 * Math.cos(ph), M.sharp) * armZone;
+    const disc = Math.exp(-r / 0.3) * (0.8 + 0.4 * n1) * (0.55 + 0.45 * smooth(0.5, 0.05, r));
+    // bulge (Sérsic-like) and, for barred galaxies, an elongated bar of old stars
+    let bulge = Math.exp(-7.7 * (Math.pow(Math.max(r, 0.002) / 0.1, 0.25) - 1)) * 0.08;
+    if (M.barred) bulge += Math.exp(-((x / 0.3) ** 2) - ((y / 0.075) ** 2)) * 0.9;
+    const clumps = smooth(0.4, 0.85, n2), knots = noise3(x * 55, y * 55, 3.3, seed + 3);
+    const young = arm * (0.35 + 1.0 * clumps) * Math.exp(-r / 0.8) * 2.6;
+    const hii = smooth(0.72, 0.92, knots) * smooth(0.35, 0.75, arm) * (0.4 + clumps) * 1.3;
+    // dust: a narrow lane on the concave (inner) side of each arm, broken into filaments
+    const lane = Math.pow(0.5 + 0.5 * Math.cos(ph + 0.6), 22) * armZone * smooth(0.06, 0.2, r);
+    const fil = ridged3(x * 11, y * 11, 2.5, 4, seed + 2);
+    const dust = clamp(lane * (0.35 + 0.8 * fil) * 0.9 + smooth(0.7, 0.95, fil) * arm * 0.3, 0, 0.85);
+    let R = 255 * (disc * 0.85 + bulge) + 150 * young + 255 * hii;
+    let Gc = 212 * (disc * 0.85 + bulge * 0.95) + 195 * young + 110 * hii;
+    let B = 160 * (disc * 0.8 + bulge * 0.72) + 255 * young + 170 * hii;
+    const k = 1 - dust;
+    R *= k; Gc *= k; B *= k * 0.97;
+    // gentle tone curve so the core is bright without clipping flat
+    const tone = (v) => 255 * (1 - Math.exp(-v / 230));
+    const a = clamp(Math.max(R, Gc, B) / 40, 0, 1) * smooth(1.08, 0.95, r);
+    return [tone(R), tone(Gc), tone(B), 255 * Math.max(a, 0.001)];
+  });
   const c = document.createElement("canvas"); c.width = c.height = S;
-  const g = c.getContext("2d"), rng = seeded(seed), C = S / 2, R = S * 0.48;
-  const arms = Math.max(1, p.arms | 0), pitch = (p.style === "grand design" ? 13 : 17) * RAD, barred = p.style === "barred spiral", bar = barred ? 0.28 : 0.1;
-  const armAt = (r, k) => (k / arms) * TAU + Math.log(Math.max(r, bar) / bar) / Math.tan(pitch);
-  // disc glow
+  const g = c.getContext("2d"), C = S / 2;
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+  g.drawImage(diffuse, 0, 0, S, S);
+  // resolved stars: blue supergiants and clusters along the arms, a fine dusting elsewhere
   g.globalCompositeOperation = "lighter";
-  const dg = g.createRadialGradient(C, C, 0, C, C, R);
-  dg.addColorStop(0, "rgba(255,226,180,0.55)"); dg.addColorStop(0.2, "rgba(220,210,220,0.22)"); dg.addColorStop(0.6, "rgba(150,170,230,0.07)"); dg.addColorStop(1, "rgba(120,150,230,0)");
-  g.fillStyle = dg; g.fillRect(0, 0, S, S);
-  // arm glow: soft blue clouds along each arm
-  const cloud = glow("#8fb0ff", 64, 0.3), pink = glow("#ff6fa8", 32, 0.3), warm = glow("#ffd9a0", 64, 0.3);
-  const gauss = () => (rng() + rng() + rng() - 1.5) / 1.5;
-  for (let k = 0; k < arms; k++) for (let i = 0; i < 600; i++) {
-    const r = bar + Math.pow(rng(), 0.9) * (1 - bar), th = armAt(r, k) + gauss() * 0.5 * (1.25 - r * 0.6);
-    const x = C + Math.cos(th) * r * R, y = C + Math.sin(th) * r * R, sz = R * (0.06 + 0.12 * rng()) * (1.1 - r * 0.5);
-    g.globalAlpha = 0.06 + 0.08 * rng(); g.drawImage(r < 0.3 ? warm : cloud, x - sz, y - sz, sz * 2, sz * 2);
-  }
-  // stars: arm stars are young and blue, the disc between is older and yellower
-  const n = Math.round(S * S / 14);
+  const n = Math.round((S * S) / 40), dot = Math.max(0.6, S / 1100);
   for (let i = 0; i < n; i++) {
-    const inArm = rng() < 0.55, r = inArm ? Math.min(1, bar * 0.6 + Math.pow(rng(), 1.1) * (1 - bar * 0.6) + gauss() * 0.03) : Math.min(1, -Math.log(1 - rng() * 0.98) * 0.3);
-    const th = inArm ? armAt(r, (rng() * arms) | 0) + gauss() * (0.35 + 0.3 * rng()) * (1.3 - r * 0.6) : rng() * TAU;
-    const x = C + Math.cos(th) * r * R, y = C + Math.sin(th) * r * R;
-    g.globalAlpha = 0.25 + 0.6 * rng() * (inArm ? 1 : 0.6);
-    g.fillStyle = r < 0.22 ? "#ffe2b8" : inArm ? (rng() < 0.7 ? "#cfdcff" : "#ffffff") : "#ffeccc";
-    const sz = Math.max(0.6, S / 900) * (rng() < 0.03 ? 2.2 : 1);
-    g.fillRect(x, y, sz, sz);
-  }
-  // star-forming regions: pink knots on the arms
-  for (let k = 0; k < arms; k++) for (let i = 0; i < 46; i++) {
-    const r = 0.25 + rng() * 0.7, th = armAt(r, k) + gauss() * 0.25, x = C + Math.cos(th) * r * R, y = C + Math.sin(th) * r * R, sz = R * (0.006 + rng() * 0.014);
-    g.globalAlpha = 0.5 + rng() * 0.5; g.drawImage(pink, x - sz * 2, y - sz * 2, sz * 4, sz * 4);
-  }
-  // the bar
-  if (barred) {
-    g.save(); g.translate(C, C); g.scale(1, 0.32); g.globalAlpha = 0.45; g.drawImage(warm, -R * bar * 1.3, -R * bar * 1.3, R * bar * 2.6, R * bar * 2.6); g.restore();
-  }
-  // dust lanes along the inner (trailing) edge of each arm
-  g.globalCompositeOperation = "source-over";
-  const dust = glow("#000000", 32, 0.4);
-  for (let k = 0; k < arms; k++) for (let i = 0; i < 700; i++) {
-    const r = bar * 0.8 + Math.pow(rng(), 0.8) * (0.95 - bar * 0.8), th = armAt(r, k) - 0.32 * (1.25 - r * 0.6) + gauss() * 0.1;
-    const x = C + Math.cos(th) * r * R, y = C + Math.sin(th) * r * R, sz = R * (0.008 + 0.022 * rng()) * (1.2 - r * 0.6);
-    g.globalAlpha = 0.18 + 0.2 * rng(); g.drawImage(dust, x - sz, y - sz, sz * 2, sz * 2);
+    const r = Math.min(1, -Math.log(1 - rng() * 0.985) * 0.3), th = rng() * TAU, x = Math.cos(th) * r, y = Math.sin(th) * r;
+    const arm = Math.pow(0.5 + 0.5 * Math.cos(M.phase(x, y, r)), M.sharp) * smooth(M.bar * 0.75, M.bar * 1.5, r);
+    if (rng() > 0.15 + arm * 0.85) continue;
+    const blue = arm > 0.4 && rng() < 0.7;
+    g.globalAlpha = (0.15 + 0.5 * rng()) * (blue ? 1 : 0.5);
+    g.fillStyle = blue ? "#cfdcff" : "#ffe6c4";
+    const sz = dot * (rng() < 0.02 ? 2.2 : 1);
+    g.fillRect(C + x * C * 0.98, C + y * C * 0.98, sz, sz);
   }
   return c;
 }
@@ -550,7 +624,7 @@ DEEPSPACE.galaxy = {
   },
   draw(ctx, w, h, t, dt, p, s) {
     spaceBg(ctx, w, h, t, s, p.sky, { density: 0.35, seed: 161 });
-    const S = Math.round(clamp(Math.max(w, h) * 0.9 * p.size, 96, big(w, h) ? 1100 : 220) / 8) * 8;
+    const S = Math.round(clamp(Math.max(w, h) * 0.9 * p.size, 96, big(w, h) ? 900 : 200) / 8) * 8;
     const key = [S, p.style, p.arms].join(":");
     if (s.key !== key) { s.key = key; s.gal = galaxyCanvas(S, p, 7); s.bg = null; }
     // faint background galaxies
@@ -562,13 +636,13 @@ DEEPSPACE.galaxy = {
     }
     const D = Math.min(w, h) * 0.95 * p.size * (w > h ? Math.min(1.6, w / h) * 0.75 : 1), ci = Math.cos(p.tilt * RAD), spin = -t * 0.01 * p.speed;
     ctx.save(); ctx.translate(w / 2, h / 2); ctx.rotate(p.angle * RAD); ctx.scale(1, Math.max(0.03, ci));
-    ctx.globalCompositeOperation = "lighter"; ctx.rotate(spin);
+    ctx.rotate(spin); // drawn over the sky so the dust lanes hide what is behind them
     ctx.drawImage(s.gal, -D / 2, -D / 2, D, D);
     ctx.restore();
     // bulge: round, not flattened with the disc
     ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.translate(w / 2, h / 2); ctx.rotate(p.angle * RAD); ctx.scale(1, Math.max(0.55, ci));
-    ctx.globalAlpha = 0.9; ctx.drawImage(glow("#ffe3b0", 64, 0.12), -D * 0.16, -D * 0.16, D * 0.32, D * 0.32);
-    ctx.globalAlpha = 0.9; ctx.drawImage(glow("#fff6e6", 64, 0.1), -D * 0.035, -D * 0.035, D * 0.07, D * 0.07);
+    ctx.globalAlpha = 0.35; ctx.drawImage(glow("#ffe3b0", 64, 0.12), -D * 0.1, -D * 0.1, D * 0.2, D * 0.2);
+    ctx.globalAlpha = 0.5; ctx.drawImage(glow("#fff6e6", 64, 0.1), -D * 0.025, -D * 0.025, D * 0.05, D * 0.05);
     ctx.restore();
     // seen nearly edge-on, the dust in the disc makes a dark lane across the bulge
     if (p.tilt > 55) {
@@ -617,17 +691,20 @@ function palette(name, x) {
 }
 function blackHoleTables(bw, bh, Rs, elev) {
   const n = bw * bh, cx = bw / 2, cy = bh / 2, rin = 1.6, rout = 5.2, se = Math.sin(elev);
-  const T = { n, pr: new Float32Array(n).fill(-1), pphi: new Float32Array(n), lr: new Float32Array(n).fill(-1), lphi: new Float32Array(n), lw: new Float32Array(n), ring: new Float32Array(n), bgx: new Float32Array(n), bgy: new Float32Array(n), shadow: new Uint8Array(n), front: new Uint8Array(n), rin, rout };
+  const T = { n, pr: new Float32Array(n).fill(-1), pphi: new Float32Array(n), lr: new Float32Array(n).fill(-1), lphi: new Float32Array(n), lw: new Float32Array(n), ring: new Float32Array(n), bgx: new Float32Array(n), bgy: new Float32Array(n), shadow: new Uint8Array(n), front: new Uint8Array(n), pw: new Float32Array(n), glow: new Float32Array(n), rin, rout };
   for (let j = 0; j < bh; j++) for (let i = 0; i < bw; i++) {
     const k = j * bw + i, x = (i + 0.5 - cx) / Rs, y = (j + 0.5 - cy) / Rs, rho = Math.hypot(x, y);
     // primary image: the disc plane seen from just above
     const Z = y / se, r = Math.hypot(x, Z);
-    if (r >= rin * 0.9 && r <= rout * 1.05 && (Z > 0 || rho > 1.02)) { T.pr[k] = r; T.pphi[k] = Math.atan2(Z, x); T.front[k] = Z > 0 ? 1 : 0; }
+    // the far half is hidden behind the shadow; fade it in just outside so there is no seam
+    if (r >= rin * 0.9 && r <= rout * 1.05 && (Z > 0 || rho > 1)) { T.pr[k] = r; T.pphi[k] = Math.atan2(Z, x); T.front[k] = Z > 0 ? 1 : 0; T.pw[k] = Z > 0 ? 1 : smooth(1, 1.12, rho); }
     if (rho < 1) { T.shadow[k] = 1; continue; }
     // lensed image: the far side lifted over the top, the underside squeezed below
     const sn = y / rho, kk = 1 + 1.6 * Math.max(0, sn), rl = Math.sqrt(rho * rho - 1) * 2.2 * kk;
-    if (rl >= rin * 0.9 && rl <= rout * 1.05) { T.lr[k] = rl; T.lphi[k] = Math.atan2(y, x); T.lw[k] = sn < 0 ? 1 : 0.65; }
+    if (rl >= rin * 0.9 && rl <= rout * 1.05) { T.lr[k] = rl; T.lphi[k] = Math.atan2(y, x); T.lw[k] = 1 - 0.35 * smooth(-0.15, 0.35, sn); }
     T.ring[k] = Math.exp(-(((rho - 1.03) / 0.03) ** 2)) + 0.3 * Math.exp(-(((rho - 1.03) / 0.12) ** 2));
+    // light scattered off the hot inner disc: a soft haze hugging the disc plane, never inside the shadow
+    T.glow[k] = Math.exp(-((y * y) / 0.5)) * Math.exp(-(((rho - 1.8) / 1.8) ** 2)) * smooth(1, 1.25, rho);
     // background: a point lens bends each ray by θE²/ρ
     const beta = rho - 1.7 / rho, f = beta / rho;
     T.bgx[k] = x * f; T.bgy[k] = y * f;
@@ -639,8 +716,10 @@ function discTexture(seed) {
   for (let j = 0; j < NR; j++) for (let i = 0; i < NP; i++) {
     const a = (i / NP) * TAU, r = j / NR;
     // streaky turbulence: slow around the disc, fast across it
-    const v = fbm3(Math.cos(a) * 3, Math.sin(a) * 3, r * 14, 5, seed) * 0.6 + fbm3(Math.cos(a) * 9, Math.sin(a) * 9, r * 30, 3, seed + 1) * 0.4;
-    d[j * NP + i] = clamp((v - 0.3) * 2.1, 0, 1.3) ** 1.4;
+    const v = fbm3(Math.cos(a) * 3, Math.sin(a) * 3, r * 8, 5, seed) * 0.6 + fbm3(Math.cos(a) * 9, Math.sin(a) * 9, r * 16, 3, seed + 1) * 0.4;
+    // plus hot clumps, sheared into arcs by the differential rotation
+    const hot = smooth(0.68, 0.85, noise3(Math.cos(a) * 14, Math.sin(a) * 14, r * 9, seed + 2));
+    d[j * NP + i] = clamp((v - 0.22) * 1.6 + hot * 0.5, 0, 1.3) ** 1.2;
   }
   return { d, NP, NR };
 }
@@ -652,7 +731,7 @@ DEEPSPACE.blackhole = {
     tilt: { type: "range", min: 3, max: 30, step: 0.5, default: 8, label: "View angle" },
     size: { type: "range", min: 0.3, max: 1.4, step: 0.01, default: 0.9, label: "Size" },
     color: { type: "select", options: Object.keys(DISC_PAL), default: "fiery", label: "Disc" },
-    beaming: { type: "range", min: 0, max: 1.5, step: 0.05, default: 0.8, label: "Doppler beaming" },
+    beaming: { type: "range", min: 0, max: 1.5, step: 0.05, default: 1, label: "Doppler beaming" },
     jets: { type: "select", options: ["no jets", "jets"], default: "no jets", label: "Jets" },
     stars: { type: "range", min: 0, max: 2, step: 0.05, default: 1, label: "Lensed stars" },
   },
@@ -664,15 +743,16 @@ DEEPSPACE.blackhole = {
       s.key = key; s.T = blackHoleTables(bw, bh, Rs, p.tilt * RAD);
       s.cv = document.createElement("canvas"); s.cv.width = bw; s.cv.height = bh; s.g = s.cv.getContext("2d"); s.img = s.g.createImageData(bw, bh);
       // the star field behind, as a wrap-around texture in hole units
-      const rng = seeded(23), SW = 512, SH = 256, st = new Float32Array(SW * SH * 3);
-      for (let i = 0; i < 1400; i++) { const x = (rng() * SW) | 0, y = (rng() * SH) | 0, b = Math.pow(rng(), 3) * 2.2, c = starColor(rng()), [r, g, bb] = hexToRgb(c), k = (y * SW + x) * 3; st[k] = r * b; st[k + 1] = g * b; st[k + 2] = bb * b; }
+      const rng = seeded(23), SW = 1024, SH = 512, st = new Float32Array(SW * SH * 3);
+      for (let i = 0; i < 3200; i++) { const x = (rng() * SW) | 0, y = (rng() * SH) | 0, b = Math.pow(rng(), 3) * 2.2, c = starColor(rng()), [r, g, bb] = hexToRgb(c), k = (y * SW + x) * 3; st[k] = r * b; st[k + 1] = g * b; st[k + 2] = bb * b; }
       s.stars = { st, SW, SH };
     }
     discTex ||= discTexture(77);
     const T = s.T, D = discTex, d = s.img.data, pal = p.color, beam = p.beaming, sp = p.spin * 0.6;
-    const { st, SW, SH } = s.stars, sScale = 26, scroll = t * 0.6, starK = p.stars;
+    const { st, SW, SH } = s.stars, sScale = Rs, scroll = t * 0.02 * Rs, starK = p.stars;
     const omega = new Float32Array(D.NR);
     for (let j = 0; j < D.NR; j++) { const r = T.rin + ((T.rout - T.rin) * j) / D.NR; omega[j] = sp * Math.pow(r, -1.5) * 2.2; }
+    const haze = palette(pal, 0.55).map((v) => v * 0.3);
     const sample = (r, phi) => {
       const jr = clamp(((r - T.rin) / (T.rout - T.rin)) * D.NR, 0, D.NR - 1) | 0;
       let a = (phi - omega[jr] * t) / TAU; a -= Math.floor(a);
@@ -696,7 +776,8 @@ DEEPSPACE.blackhole = {
       }
       if (T.lr[k] > 0) { const c = sample(T.lr[k], T.lphi[k]), a = c[3] * T.lw[k]; r = r * (1 - a) + c[0] * T.lw[k] * 1.1; g = g * (1 - a) + c[1] * T.lw[k] * 1.1; b = b * (1 - a) + c[2] * T.lw[k] * 1.1; }
       const ring = T.ring[k]; if (ring > 0.001) { r += 255 * ring * 0.9; g += 200 * ring * 0.9; b += 150 * ring * 0.9; }
-      if (T.pr[k] > 0) { const c = sample(T.pr[k], T.pphi[k]), a = c[3]; r = r * (1 - a) + c[0]; g = g * (1 - a) + c[1]; b = b * (1 - a) + c[2]; }
+      if (T.pr[k] > 0) { const c = sample(T.pr[k], T.pphi[k]), wgt = T.pw[k], a = c[3] * wgt; r = r * (1 - a) + c[0] * wgt; g = g * (1 - a) + c[1] * wgt; b = b * (1 - a) + c[2] * wgt; }
+      const gl = T.glow[k]; if (gl > 0.002) { r += haze[0] * gl; g += haze[1] * gl; b += haze[2] * gl; }
       const q = k * 4;
       // filmic roll-off so the hottest parts saturate to white instead of clipping
       d[q] = 255 * (1 - Math.exp(-r / 190)); d[q + 1] = 255 * (1 - Math.exp(-g / 190)); d[q + 2] = 255 * (1 - Math.exp(-b / 190)); d[q + 3] = 255;
@@ -704,10 +785,8 @@ DEEPSPACE.blackhole = {
     s.g.putImageData(s.img, 0, 0);
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
     ctx.drawImage(s.cv, 0, 0, w, h);
-    // bloom around the hot inner disc
     const R = Rs / f, cx = w / 2, cy = h / 2;
     ctx.save(); ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.18; ctx.drawImage(glow(pal === "quasar" ? "#9f8cff" : "#ffb070", 64, 0.2), cx - R * 5, cy - R * 2.2, R * 10, R * 4.4);
     if (p.jets === "jets") {
       for (const k of [-1, 1]) {
         const g = ctx.createLinearGradient(cx, cy, cx, cy + k * h * 0.55);
