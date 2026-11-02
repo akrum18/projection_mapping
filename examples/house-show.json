@@ -31,13 +31,18 @@
    "id": "hall",
    "name": "Halloween",
    "theme": "halloween"
+  },
+  {
+   "id": "space",
+   "name": "Space",
+   "theme": "space"
   }
  ],
  "scene": "xmas",
  "surfaces": [
   {
    "id": "s34",
-   "name": "Lightning (whole frame)",
+   "name": "Whole frame (lightning, stars)",
    "visible": true,
    "locked": false,
    "corners": [
@@ -109,6 +114,32 @@
       },
       "delay": 0,
       "duration": 10
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "meteors",
+      "params": {
+       "rate": 10,
+       "x": 0.85,
+       "y": -0.3,
+       "fireballs": "fireballs",
+       "color": "mixed",
+       "sky": "stars"
+      }
+     },
+     "scare": {
+      "type": "effect",
+      "effect": "warp",
+      "params": {
+       "mode": "jump",
+       "length": 10,
+       "x": 0.5,
+       "y": 0.35
+      },
+      "duration": 10,
+      "delay": 14
      }
     }
    }
@@ -200,6 +231,24 @@
     "hall": {
      "content": {
       "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "comet",
+      "params": {
+       "x": 0.97,
+       "y": 0.4,
+       "angle": 180,
+       "length": 1.3,
+       "sky": "transparent",
+       "drift": 0
+      }
      },
      "scare": {
       "type": "none",
@@ -303,6 +352,22 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "planet",
+      "params": {
+       "body": "earth",
+       "size": 0.95,
+       "sky": "transparent",
+       "moons": "no moons"
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -396,6 +461,23 @@
     "hall": {
      "content": {
       "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "planet",
+      "params": {
+       "body": "moon",
+       "size": 0.95,
+       "sky": "transparent",
+       "phases": "cycle",
+       "sun": 90
+      }
      },
      "scare": {
       "type": "none",
@@ -513,6 +595,22 @@
       "delay": 0,
       "duration": 10
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "planet",
+      "params": {
+       "body": "saturn",
+       "size": 1,
+       "sun": 70,
+       "sky": "transparent"
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -624,6 +722,22 @@
       },
       "delay": 0,
       "duration": 10
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "planet",
+      "params": {
+       "body": "mars",
+       "size": 0.9,
+       "sun": 60,
+       "sky": "transparent"
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
      }
     }
    }
@@ -737,6 +851,20 @@
       "delay": 0,
       "duration": 10
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "blackhole",
+      "params": {
+       "size": 1.1,
+       "tilt": 9
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -848,6 +976,22 @@
       },
       "delay": 0,
       "duration": 10
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "galaxy",
+      "params": {
+       "size": 1.25,
+       "tilt": 45,
+       "angle": -18,
+       "sky": "transparent"
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
      }
     }
    }
@@ -961,6 +1105,19 @@
       "delay": 0,
       "duration": 10
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "orbit",
+      "params": {
+       "window": "porthole"
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -1037,6 +1194,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -1127,6 +1293,15 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -1203,6 +1378,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -1293,6 +1477,15 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -1369,6 +1562,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -1466,6 +1668,23 @@
     "hall": {
      "content": {
       "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "constellations",
+      "params": {
+       "sky": "winter",
+       "pace": 7,
+       "drift": 0.2,
+       "bg": "transparent",
+       "labels": "lines only"
+      }
      },
      "scare": {
       "type": "none",
@@ -1581,6 +1800,22 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "sun",
+      "params": {
+       "size": 0.95,
+       "corona": 0,
+       "flares": "calm",
+       "sky": "black"
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -1673,6 +1908,23 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "effect",
+      "effect": "launch",
+      "params": {
+       "mode": "show",
+       "countdown": "no text",
+       "length": 30,
+       "sky": "none"
+      },
+      "duration": 26,
+      "delay": 0
+     }
     }
    }
   },
@@ -1764,6 +2016,23 @@
      "scare": {
       "type": "none",
       "duration": 4
+     }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "effect",
+      "effect": "launch",
+      "params": {
+       "mode": "show",
+       "countdown": "no text",
+       "length": 30,
+       "sky": "none"
+      },
+      "duration": 26,
+      "delay": 0.3
      }
     }
    }
@@ -1865,6 +2134,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -1979,6 +2257,15 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -2086,6 +2373,15 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -2179,6 +2475,21 @@
     "hall": {
      "content": {
       "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "stars",
+      "params": {
+       "density": 1.6,
+       "shooting": 0.3,
+       "sky": "black"
+      }
      },
      "scare": {
       "type": "none",
@@ -2288,6 +2599,22 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "outlinelights",
+      "params": {
+       "palette": "blue & white",
+       "mode": "steady",
+       "size": 0.6,
+       "spacing": 4
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -2387,6 +2714,22 @@
     "hall": {
      "content": {
       "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "outlinelights",
+      "params": {
+       "palette": "blue & white",
+       "mode": "steady",
+       "size": 0.6,
+       "spacing": 4
+      }
      },
      "scare": {
       "type": "none",
@@ -2496,6 +2839,22 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "outlinelights",
+      "params": {
+       "palette": "blue & white",
+       "mode": "steady",
+       "size": 0.6,
+       "spacing": 4
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -2595,6 +2954,22 @@
     "hall": {
      "content": {
       "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "outlinelights",
+      "params": {
+       "palette": "blue & white",
+       "mode": "steady",
+       "size": 0.6,
+       "spacing": 4
+      }
      },
      "scare": {
       "type": "none",
@@ -2704,6 +3079,22 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "effect",
+      "effect": "outlinelights",
+      "params": {
+       "palette": "blue & white",
+       "mode": "steady",
+       "size": 0.6,
+       "spacing": 4
+      }
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -2795,6 +3186,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -2896,6 +3296,15 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -2963,6 +3372,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -3049,6 +3467,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -3146,6 +3573,15 @@
       "type": "none",
       "duration": 4
      }
+    },
+    "space": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
     }
    }
   },
@@ -3213,6 +3649,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },
@@ -3323,6 +3768,15 @@
      }
     },
     "hall": {
+     "content": {
+      "type": "none"
+     },
+     "scare": {
+      "type": "none",
+      "duration": 4
+     }
+    },
+    "space": {
      "content": {
       "type": "none"
      },

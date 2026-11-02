@@ -825,7 +825,7 @@ DEEPSPACE.warp = {
       flash = Math.exp(-(((e - 0.4) / 0.015) ** 2)) + 0.8 * Math.exp(-(((e - 0.7) / 0.015) ** 2));
     } else if (p.mode === "tunnel") { tunnel = 1; v = 5; streak = 10; }
     v *= p.speed;
-    ctx.fillStyle = `rgba(0,0,0,${tunnel > 0.5 ? 0.6 : 1})`; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h);
     const [cr, cg, cb] = hexToRgb(p.color);
     if (!s.st) s.st = Array.from({ length: 700 }, () => ({ x: rnd(1, -1), y: rnd(1, -1), z: rnd(1, 0.02), c: starColor(Math.random()) }));
     ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.lineCap = "round";
@@ -836,7 +836,8 @@ DEEPSPACE.warp = {
       const x = cx + (q.x / q.z) * F, y = cy + (q.y / q.z) * F;
       if (x < -50 || x > w + 50 || y < -50 || y > h + 50) { q.z = 1; q.x = rnd(1, -1); q.y = rnd(1, -1); continue; }
       const zt = Math.min(1, q.z + v * 0.012 * streak), x2 = cx + (q.x / zt) * F, y2 = cy + (q.y / zt) * F;
-      const near = 1 - q.z, a = clamp(near * 1.3, 0, 1) * (1 - tunnel);
+      // long streaks overlap heavily, so thin them out or the whole wall washes grey
+      const near = 1 - q.z, a = clamp(near * 1.3, 0, 1) * (1 - tunnel) * Math.min(1, 3 / streak);
       ctx.strokeStyle = streak > 3 ? `rgba(${cr},${cg},${cb},${a})` : q.c; ctx.globalAlpha = streak > 3 ? 1 : a;
       ctx.lineWidth = Math.max(0.6, near * 2.6 * (Math.min(w, h) / 500));
       ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x, y); ctx.stroke();
@@ -847,7 +848,7 @@ DEEPSPACE.warp = {
       for (let i = 0; i < 120; i++) {
         const a = (i / 120) * TAU + Math.sin(i * 12.9) * 0.05 + t * 0.4, ph = (t * 1.4 * p.speed + i * 0.37) % 1;
         const r0 = R * Math.pow(ph, 2.2) * 0.9, r1 = R * Math.pow(Math.min(1, ph + 0.18), 2.2) * 0.9;
-        ctx.strokeStyle = i % 5 ? `rgb(${cr},${cg},${cb})` : "#ffffff"; ctx.globalAlpha = tunnel * ph * 0.6; ctx.lineWidth = Math.max(0.8, ph * Math.min(w, h) * 0.012);
+        ctx.strokeStyle = i % 5 ? `rgb(${cr},${cg},${cb})` : "#ffffff"; ctx.globalAlpha = tunnel * ph * 0.35; ctx.lineWidth = Math.max(0.8, ph * Math.min(w, h) * 0.012);
         ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); ctx.lineTo(cx + Math.cos(a + 0.05) * r1, cy + Math.sin(a + 0.05) * r1); ctx.stroke();
       }
       for (let k = 0; k < 6; k++) { const e = (t * 0.8 * p.speed + k / 6) % 1, rr = R * e * e * 0.7; ctx.strokeStyle = `rgb(${cr},${cg},${cb})`; ctx.globalAlpha = tunnel * e * 0.25; ctx.lineWidth = Math.max(1, e * Math.min(w, h) * 0.02); ctx.beginPath(); ctx.ellipse(cx, cy, rr, rr * 0.92, t * 0.3, 0, TAU); ctx.stroke(); }

@@ -757,7 +757,8 @@ SPACE.launch = {
     mode: { type: "select", options: ["loop", "show"], default: "loop", label: "Timing" },
     countdown: { type: "select", options: ["countdown", "no text"], default: "countdown", label: "Countdown" },
     length: { type: "range", min: 30, max: 90, step: 1, default: 46, label: "Seconds per launch" },
-    sky: { type: "select", options: ["night", "dusk"], default: "night", label: "Sky" },
+    // "none" leaves everything but the rocket, flame and smoke black, for a surface on a wall
+    sky: { type: "select", options: ["night", "dusk", "none"], default: "night", label: "Sky" },
   },
   draw(ctx, w, h, t, dt, p, s, info) {
     if (s.t0 === undefined) s.t0 = t;
@@ -778,16 +779,16 @@ SPACE.launch = {
     const sk = ctx.createLinearGradient(0, 0, 0, h);
     sk.addColorStop(0, dusk ? `rgb(${30 * (1 - up) | 0},${30 * (1 - up) | 0},${70 * (1 - up) + 5 | 0})` : "#010207");
     sk.addColorStop(1, dusk ? `rgb(${(170 * (1 - up)) | 0},${(80 * (1 - up)) | 0},${(70 * (1 - up)) | 0})` : `rgb(${8 * (1 - up) | 0},${14 * (1 - up) | 0},${34 * (1 - up) + 2 | 0})`);
-    ctx.fillStyle = sk; ctx.fillRect(0, 0, w, h);
-    starfield(ctx, w, h, t, s, { density: 0.6 + up, seed: 101, bright: dusk ? up : 0.5 + up * 0.5 });
+    if (p.sky === "none") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, w, h); }
+    else { ctx.fillStyle = sk; ctx.fillRect(0, 0, w, h); starfield(ctx, w, h, t, s, { density: 0.6 + up, seed: 101, bright: dusk ? up : 0.5 + up * 0.5 }); }
     const Y = (wy) => h * 0.9 - (wy - camY) * U; // world height → screen y
     const ignite = tau > IGN, flameK = ignite ? clamp((tau - IGN) / 0.8, 0, 1) : 0, burn1 = tau < STAGE, burn2 = tau > STAGE + 1.5;
     const rx = gx, ry = Y(alt + 0.25), rs = U * 3.8 * scale;
     // ground, pad, tower and floodlights
     if (Y(0) < h + U * 3) {
       const gy = Y(0);
-      ctx.fillStyle = "#050607"; ctx.fillRect(0, gy, w, h - gy + U * 3);
-      ctx.fillStyle = "#0d0f12"; ctx.fillRect(gx - U * 1.6, gy - U * 0.25, U * 3.2, U * 0.25);
+      ctx.fillStyle = p.sky === "none" ? "#000" : "#050607"; ctx.fillRect(0, gy, w, h - gy + U * 3);
+      ctx.fillStyle = p.sky === "none" ? "#000" : "#0d0f12"; ctx.fillRect(gx - U * 1.6, gy - U * 0.25, U * 3.2, U * 0.25);
       // floodlight beams fade once she's away
       const fk = clamp(1 - lt / 6, 0, 1) * (dusk ? 0.5 : 1);
       if (fk > 0) {
