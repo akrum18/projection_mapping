@@ -144,8 +144,16 @@ read from the street. Map each one onto the real feature:
 | **Tree lights** | A rectangle around an evergreen in the yard | Strands of bulbs and a star. The needles catch the light |
 | **Sleigh across the house** | The upper wall | A big silhouette in a travelling pool of moonlight, with a gold trail |
 | **Merry Christmas lettering** | A clear band of siding | Written on with a glowing pen. The text is editable |
+| **Peppermint swirl** | A square of bare siding, such as either side of a window | A giant hard candy that turns slowly. Choose swirl or starlight stripes, any colour, with or without the cellophane twists (they need a wide box). Show: it whirls |
+| **Window wreath** | The glass of a window, on top of its candle | The colonial wreath in every window. It hangs in the top of the glass so the candle stands behind it. Bow at the top or bottom, warm or coloured lights. Show: sparkle |
+| **Garland & bows** | Below a porch gutter, from column to column, or around a door frame (Shape: top & sides) | Evergreen swags with a red bow at each hang point and lights woven in. Set Swags so the bows land on your columns. To split a run at a column, set "Bows at the ends" so only one run puts a bow there. Show: the lights chase |
+| **Nutcracker** | A tall strip of wall beside the door, bottom edge on the porch floor | A wooden soldier with a turned-wood finish, a clacking jaw and a staff. Use a mirrored pair so both staffs are on the outside. Coat, trousers and hat colours are editable. Show: he salutes |
+| **Snowflakes** | The upper wall, or any bare siding | Big, crisp six-fold crystals (no two alike) that drift and turn and now and then catch the light. Motion: hang puts them on a neat grid like giant lit flakes. Show: a flurry gusts them sideways |
+| **Gingerbread icing** | A gutter: the top edge of the box on the gutter, with room below for drips | Thick piped royal icing dripping onto the siding, topped with gumdrops and peppermints. Show: sugar sparkles sweep along and the candies light up in turn |
 
-Avoid dark surfaces such as black shutters: they swallow light.
+Avoid dark surfaces such as black shutters: they swallow light. Saturated
+colours behave the same way: green garland on a red door all but disappears.
+The night preview shows this, so keep greens on white trim and grey siding.
 
 **Choreography.** Each surface's **Scare** tab sets its show-moment content and
 a **Start after** delay, so one press of **SHOW** (the scare button reads SHOW
@@ -159,15 +167,26 @@ colour: what white trim, black shutters and a red door really do to the
 content.
 
 **Template.** `examples/house-show.json` is a complete show for a
-two-storey colonial, with a Christmas scene and a Halloween scene. Christmas: candles and trim lights on five windows, door-frame,
-roofline, porch-roof and railing lights, candy-cane porch columns, a wrapped
-door around its wreath, lights on a spruce, a sleigh across the upper wall and
-lettering on the siding band. Its show cascades over about 24 seconds:
+two-storey colonial, with three scenes:
+
+- **Christmas:**
+  - every window has a candle, a wreath and trim lights;
+  - giant peppermints either side of the upstairs middle window;
+  - a pair of nutcrackers guarding the door;
+  - a garland on the door frame, and swags with bows on the porch columns;
+  - roofline and railing lights, candy-cane porch columns, a wrapped door
+    around its wreath, lights on a spruce, snowflakes drifting across the upper
+    wall, and lettering on the siding band.
+- **Gingerbread house:** the same house with thick icing and candies on the
+  roofline and porch roof, plus candy-cane red and white bulbs on the trim.
+- **Halloween:** The Watcher (below).
+
+The Christmas show cascades over about 24 seconds:
 1. The trim lights switch to a rainbow chase.
-2. The sleigh crosses the upper wall.
-3. Each window bursts bright as the sleigh passes.
-4. The door shines, the columns spin, the lettering rewrites and the tree
-   sparkles.
+2. The sleigh crosses the upper wall and the peppermints whirl.
+3. Each window bursts bright and its wreath sparkles as the sleigh passes.
+4. The door shines, the nutcrackers salute, the columns spin, the lettering
+   rewrites and the tree sparkles.
 
 Load it with **Import JSON**, add your house photo, then line each surface up
 with your own windows and door: drag it, then use Warp for the corners.
@@ -275,7 +294,9 @@ Notes:
 
 ## Christmas
 
-Effects: Fireplace, Door wreath, Snowman, Winter village, Santa at the
+Effects: Fireplace, the house effects and classic decor above (Peppermint
+swirl, Window wreath, Garland & bows, Nutcracker, Snowflakes, Gingerbread
+icing), Door wreath, Snowman, Winter village, Santa at the
 window, Snow globe, Snowfall, String lights, Candy cane stripes, Wrapped
 present, Icicles, Northern lights, Santa's sleigh, Hanging ornaments,
 Twinkling stars and Christmas tree (plus Fire, Candle flicker and Text
@@ -301,7 +322,7 @@ message).
   output** in Position, and put it on top of the list for snow over the whole
   house.
 - **String lights** has palettes (classic, warm white, red & green, blue &
-  white, rainbow) and twinkle, chase, fade or steady patterns.
+  white, rainbow, candy cane) and twinkle, chase, fade or steady patterns.
 - **Candy cane stripes** shades like a round pillar by default; switch
   Shading to Flat for flat surfaces.
 - Text message works for "Merry Christmas" too: change the text, colour and
@@ -354,9 +375,10 @@ Output window: **F** fullscreen, **H** toggle hint, **Space** scare, **B** black
 - `js/effects.js` – built-in effects and theme tags. Add your own by adding an entry to `EFFECTS`.
 - `js/effects-halloween.js` – The Watcher (Halloween haunting with lightning).
 - `js/effects-house.js` – effects designed for real architecture (outline lights, window candle, wrapped door, tree lights, sleigh, lettering).
+- `js/effects-decor.js` – classic Christmas decor (peppermint, window wreath, garland & bows, nutcracker, snowflakes, gingerbread icing).
 - `js/effects-christmas.js`, `js/effects-fireplace.js`, `js/fx-util.js` – the Christmas pack, the fireplace, and helpers shared by effect packs.
 - `js/effects-space.js`, `js/effects-deepspace.js`, `js/space-gfx.js` – the space pack (Solar System; night sky and deep space) and its renderer: noise, procedural planet textures with real geography, and the per-pixel sphere renderer.
-- `examples/house-show.json` – a complete Christmas + Halloween show template for a two-storey house.
+- `examples/house-show.json` – a complete show template for a two-storey house (Christmas, Gingerbread house and Halloween scenes).
 - `js/editor/scenes.js` – scenes and the Christmas, Halloween and Space starters.
 - `js/live.js` – live video sources (cameras, capture devices, window capture).
 - `media/` – your videos/images. `projects/` – saved projects.

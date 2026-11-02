@@ -6,6 +6,7 @@ import { CHRISTMAS } from "./effects-christmas.js";
 import { FIREPLACE } from "./effects-fireplace.js";
 import { HOUSE } from "./effects-house.js";
 import { HALLOWEEN } from "./effects-halloween.js";
+import { DECOR } from "./effects-decor.js";
 import { SPACE } from "./effects-space.js";
 import { DEEPSPACE } from "./effects-deepspace.js";
 
@@ -590,7 +591,7 @@ export const EFFECTS = {
   },
 };
 
-Object.assign(EFFECTS, HALLOWEEN, FIREPLACE, HOUSE, CHRISTMAS, SPACE, DEEPSPACE);
+Object.assign(EFFECTS, HALLOWEEN, FIREPLACE, HOUSE, DECOR, CHRISTMAS, SPACE, DEEPSPACE);
 
 // Themes shown as filter chips in the editor. An effect can belong to several.
 export const THEMES = [["all", "All"], ["halloween", "Halloween"], ["christmas", "Christmas"], ["space", "Space"], ["basics", "Basics"]];
@@ -602,6 +603,7 @@ const TAGS = {
 };
 for (const k of Object.keys(CHRISTMAS)) TAGS[k] = ["christmas"];
 for (const k of Object.keys(HOUSE)) TAGS[k] = ["christmas"];
+for (const k of Object.keys(DECOR)) TAGS[k] = ["christmas"];
 TAGS.fireplace = ["halloween", "christmas"];
 for (const k of [...Object.keys(SPACE), ...Object.keys(DEEPSPACE)]) TAGS[k] = ["space"];
 TAGS.aurora = ["christmas", "space"]; TAGS.stars = ["christmas", "space"];
